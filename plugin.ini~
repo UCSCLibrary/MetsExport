@@ -1,0 +1,10 @@
+[info]
+name="OmeConnections"
+author="Ned Henry"
+description="Modular utility for import, export, and sync of Omeka records and files with remote repositories or external files."
+license="GPLv3"
+link=""
+support_link=""
+omeka_minimum_version="2.1"
+omeka_target_version="2.1"
+version="1.0.0"
