@@ -2,7 +2,7 @@
 
 Class MetsExporter 
 { 
-  public $force_download = false;
+  public $force_download = true;
 
   public function exportItem($itemID)
   {
