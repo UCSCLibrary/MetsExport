@@ -12,36 +12,106 @@
  */
 class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
 {
+
     /**
      * @var array Hooks for the plugin.
      */
     protected $_hooks = array(
 			      'config_form',
 			      'admin_head',
-			      'admin_collections_show'
+			      'admin_collections_show',
+			      'install',
+			      'uninstall', 
+			      'config'
 			      );
     /**
-     * @var array Filters for the plugin.
+     * @var array $_filters Filters for the plugin.
      */
     protected $_filters = array('action_contexts','response_contexts');
 
-
+    /**
+     * @var array $options Options for the plugin.
+     */
+    protected $_options = array(
+			       //'mets_includeDeriv'=>false,
+			       'mets_includeLogs'=>0,
+			       'mets_admElements'=>""
+			       );
+    
     /*
      * Define the METS context and set browser headers 
      * to output an XML file with a .mets extension
      */
     public function filterResponseContexts($contexts)
     {
+
       $contexts['METS'] = array('suffix' => 'mets',
 				'headers' => array('Content-Type' => 'application/octet-stream')
 				);
       
       $contexts['METSzip'] = array('suffix' => 'metszip',
-				   'headers' => array('Content-Type' => 'application/octet-stream')
-				   );
+      				   'headers' => array('Content-Type' => 'application/octet-stream')
+      );
    
       return $contexts;
 
+    }
+
+    /**
+     * Display the plugin config form.
+     */
+    public function hookConfigForm() {
+      require_once dirname(__FILE__) . '/forms/ConfigForm.php';
+      $form = new MetsExport_Form_Config();
+      echo($form->render());
+    }
+
+    /**
+     * Set the options from the config form input.
+     */
+    public function hookConfig() {
+      if(isset($_REQUEST['descMeta']))
+	{
+	  try{
+	    require_once dirname(__FILE__) . '/forms/ConfigForm.php';
+	    MetsExport_Form_Config::ProcessPost();
+	  }catch(Exception $e) {
+	    $flashMessenger = $this->_helper->FlashMessenger;
+	    $flashMessenger->addMessage("Unable to save new Mets Export options","error");  
+	  }
+	}
+    }
+
+   /**
+     * Install the plugin.
+     */
+    public function hookInstall()
+    {
+      
+      $admElementsDefault = array(
+				  'License'=>'rights',
+				  'Rights'=>'rights',
+				  'Source'=>'source',
+				  'Rights Holder'=>'rights',
+				  'Original Format'=>'tech',
+				  'Provenance'=>'digiprov',
+				  'Compression'=>'tech',
+				  'Physical Dimensions'=>'tech',
+				  'OwningInstitution'=>'rights',
+				  'OwningInstitutionURL'=>'rights',
+				  'Bit Rate/Frequency'=>'tech',
+				  'Date Created'=>'tech'
+				  );
+      $this->_options['mets_admElements']=serialize($admElementsDefault);
+      $this->_installOptions();
+    }
+
+    /**
+     * Uninstall the plugin.
+     */
+    public function hookUninstall()
+    {   
+        $this->_uninstallOptions();
     }
 
     /**
@@ -67,19 +137,10 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
       return $contexts;
     }
 
-    /**
-     * Display the plugin config form.
-     */
-    public function hookConfigForm()
-    {
-        require dirname(__FILE__) . '/config_form.php';
-
-	//TODO make this a subclass of Omeka_Form which I instantiate here
-    }
-
     public function hookAdminHead()
     {
-      //queue_js_file('MetsExport');
+      queue_js_file('MetsExport');
+      queue_css_file('MetsExport');
     }
 
 }

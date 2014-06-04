@@ -11,6 +11,9 @@ $metsExporter = new MetsExporter();
 if(!isset($itemID))
   die('ERROR: item ID not set');
 
+header('Content-Type: application/octet-stream');
+	header('Content-Disposition: attachment; filename="Item_'.$itemID.'_METS.xml"');
+
 try{
   echo $metsExporter->exportItem($itemID);
 } catch (Exception $e) {

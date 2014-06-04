@@ -1,0 +1,18 @@
+jQuery(document).ready(function() {
+ 
+    jQuery('#make-adm-button').click(function(event){
+	event.preventDefault();
+        jQuery('#desc-meta option:selected').each( function() {
+            jQuery('#adm-meta').append("<option value='"+jQuery(this).val()+"'>"+jQuery(this).text()+"</option>");
+            jQuery(this).remove();
+        });
+    });
+    jQuery('#make-desc-button').click(function(event){
+	event.preventDefault();
+        jQuery('#adm-meta option:selected').each( function() {
+            jQuery('#desc-meta').append("<option value='"+jQuery(this).val()+"'>"+jQuery(this).text()+"</option>");
+            jQuery(this).remove();
+        });
+    });
+ 
+});

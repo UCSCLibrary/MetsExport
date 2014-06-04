@@ -2,12 +2,23 @@
 
 Class MetsExporter 
 { 
-  public $force_download = true;
+  public static $force_download = true;
+
+  private $_admElNames;
+  private $_admElements = array();
+  //private $_includeDeriv = get_option('mets_includeDeriv');
+  private $_includeLogs;
+
+  function __construct()
+  {
+    $this->_admElNames  = unserialize(get_option('mets_admElements'));
+    $this->_includeLogs = get_option('mets_includeLogs');
+  }
 
   public function exportItem($itemID)
   {
     ob_start();
-    $this->_generateMETS($itemID);
+    $this->_generateMETS($itemID,false);
     return ob_get_clean();
   }
 
@@ -21,21 +32,20 @@ Class MetsExporter
     
     error_reporting(0);
 
-    $zip = new ZipStream($collection->id.'.zip');
+    $zip = new ZipStream('Collection_'.$collection->id.'.zip');
 
     foreach($items as $item)
       {
 	ob_start();
-	$this->_generateMETS($item->id);
-	$zip->add_file($item->id.".mets", ob_get_clean() );
+	$this->_generateMETS($item->id,false);
+	$zip->add_file("Item_".$item->id.".mets.xml", ob_get_clean() );
       }
     $zip->finish();
   }
 
 
-  private function _generateMETS($itemID)
+  private function _generateMETS($itemID,$force_download=true)
   {
-    
     if(!is_numeric($itemID))
       {
 	echo "ERROR: Invalid item ID";
@@ -61,10 +71,9 @@ Class MetsExporter
     $agents = $this->_getAgents($item);
 
 
-    if($this->force_download)
+    if($force_download)
       {
-	header('Content-Type: application/octet-stream');
-	header('Content-Disposition: attachment; filename="ITEM_'.$itemID.'_METS.xml"');
+	
       }
     echo '<?xml version="1.0" encoding="UTF-8"?>'."\n";
 
@@ -95,7 +104,7 @@ Class MetsExporter
     echo 'CREATEDATE="'.date("Y-m-d\TH:i:s").'" ';
     //echo 'LASTMODDATE="'..'" ';
     echo 'ID="HDR_ITEM'.$itemID.'" ';
-    //echo '"ADMID=ADM_HDR_ITEM'.$itemID.'" ';
+    echo 'ADMID="AMD_ITEM'.$itemID.'" ';
     echo ">\n";
 
     foreach($agents as $agent)
@@ -126,12 +135,8 @@ Class MetsExporter
 
     echo "\n<METS:dmdSec ";
     echo 'ID="DMD_ITEM'.$itemID.'" ';
-    //echo 'ADMID=AMD_ITEM"'.$itemID.'" ';
-    //echo 'GROUPID="'..'" ';
-    //echo 'CREATED="'..'" ';
-    //echo 'STATUS="'..'" ';
     echo ">\n";
-
+    
     $elementArray = $item->getAllElements();
 
     foreach($elementArray as $elementSetName => $elements)
@@ -143,19 +148,13 @@ Class MetsExporter
     
 	echo '<METS:mdWrap ';
 	echo 'ID="MDW_ITEM'.$itemID.'_'.$eSSlug.'" ';
-	//echo 'MIMETYPE="'..'" ';
 	echo 'LABEL="'.$elementSetName.'" ';
 	if($this->_is_type_other($eSSlug))
 	  {
 	    echo 'MDTYPE="OTHER" ';
-	    //echo 'MDTYPEVERSION="'..'" ';
 	    $eSSlug = "";
 	    echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
 	  }
-	//echo 'SIZE="'..'" ';
-	//echo 'CREATED="'..'" ';
-	//echo 'CHECKSUM="'..'" ';
-	//echo 'CHECKSUMTYPE="'..'" ';
 	echo ">\n";
 
 	echo "<METS:xmlData>\n";
@@ -165,6 +164,14 @@ Class MetsExporter
 
 	foreach($elements as $element)
 	  {
+	    if(array_key_exists($element->name,$this->_admElNames))
+	      {
+		if(!array_key_exists($elementSetName,$this->_admElements))
+		  $this->_admElements[$elementSetName] = array();
+		$this->_admElements[$elementSetName][]=$element;
+		continue;
+	      }
+
 	    $elementTexts =  $item->getElementTexts($elementSetName,$element->name);
 	    if(empty($elementTexts))
 	      continue;
@@ -196,10 +203,6 @@ Class MetsExporter
       {
 	echo "\n<METS:dmdSec ";
 	echo 'ID="DMD_FILE'.$file->item_id.$i.'" ';
-	//echo 'ADMID=AMD_ITEM"'.$itemID.'" ';
-	//echo 'GROUPID="'..'" ';
-	//echo 'CREATED="'..'" ';
-	//echo 'STATUS="'..'" ';
 	echo ">\n";
 
 	$elements = $file->getAllElements();
@@ -218,15 +221,10 @@ Class MetsExporter
 	    if($this->_is_type_other($eSSlug))
 	      {
 		echo 'MDTYPE="OTHER" ';
-		//echo 'MDTYPEVERSION="'..'" ';
 		if($eSSlug==="unknown")
 		  $eSSlug = "";
 		echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
 	      }
-	    //echo 'SIZE="'..'" ';
-	    //echo 'CREATED="'..'" ';
-	    //echo 'CHECKSUM="'..'" ';
-	    //echo 'CHECKSUMTYPE="'..'" ';
 	    echo ">\n";
 
 	    echo "<METS:xmlData>\n";
@@ -236,6 +234,8 @@ Class MetsExporter
 
 	    foreach($elements as $element)
 	      {
+		if(array_key_exists($element->name,$this->_admElNames))
+		  continue;
 
 		$elementTexts =  $file->getElementTexts($elementSetName,$element->name);
 
@@ -269,10 +269,193 @@ Class MetsExporter
     //ADMINISTRATIVE METADATA
     //--------------------
 
+    //----Item ADMSEC-----
 
-    //**TODO** ADD SECTIONS HERE FOR OMEKA USER INFORMATION
-    //(IF I CAN FIND ANYTHING RELEVANT TO INCLUDE)
+    echo "\n<METS:amdSec ";
+    echo 'ID="AMD_ITEM'.$itemID.'" ';
+    echo ">\n";
 
+    $rightsMD = "";
+    $sourceMD = "";
+    $techMD = "";
+    $digiprovMD = "";
+    $md_start = "";
+    $md_end = "";
+    $mdWrap = array();
+
+    foreach($this->_admElements as $elementSetName=>$elements)
+      {
+
+	$eSSlug=$this->_getElementSetSlug($elementSetName);
+    
+
+	ob_start();
+	echo '<METS:mdWrap ';
+	echo 'ID="MDW_ITEM'.$itemID.'_'.$eSSlug.'" ';
+	echo 'LABEL="'.$elementSetName.'" ';
+	if($this->_is_type_other($eSSlug))
+	  {
+	    echo 'MDTYPE="OTHER" ';
+	    $eSSlug = "";
+	    echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
+	  }
+
+	echo ">\n<METS:xmlData>\n";
+
+	$MDwrap['begin'] = ob_get_clean();
+
+	if($eSSlug!=="")
+	  $eSSlug .= ":";
+
+	foreach($elements as $element)
+	  {
+	    $MDtype = $this->_admElNames[$element->name];
+
+	    $elementTexts =  $item->getElementTexts($elementSetName,$element->name);
+	    if(empty($elementTexts))
+	      continue;
+	    $flag = true;
+
+	    ob_start();
+	    foreach($elementTexts as $elementText)
+	      {
+		echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+		echo $elementText->text;
+		echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+	      }
+	    $MDwrap[$MDtype] = ob_get_clean();
+	  }
+
+	ob_start();
+	echo "</METS:xmlData>\n";
+	echo "</METS:mdWrap>\n";
+	$MDwrap['end']=ob_get_clean();
+
+	if(!empty($MDwrap['rights']))
+	  echo($MDwrap['begin']."<mets:techMD>".$MDwrap['rights']."</mets:techMD>".$MDwrap['end']);
+	if(!empty($MDwrap['source']))
+	  echo($MDwrap['begin']."<mets:sourceMD>".$MDwrap['source']."</mets:sourceMD>".$MDwrap['end']);
+	if(!empty($MDwrap['tech']))
+	  echo($MDwrap['begin']."<mets:techMD>".$MDwrap['tech']."</mets:techMD>".$MDwrap['end']);
+	if(!empty($MDwrap['digiprov']))
+	  echo($MDwrap['begin']."\n<mets:digiprovMD>\n".$MDwrap['digiprov']."\n</mets:digiprovMD>\n".$MDwrap['end']);
+
+      }
+
+    if($this->_includeLogs && plugin_is_active('HistoryLog')) {
+	$logItems = HistoryLog_Helper_Log::GetItemLog($itemID,999);
+	
+	echo '<METS:mdWrap ';
+	echo 'ID="MDW_ITEM'.$itemID.'_CURATIONLOG" ';
+	echo 'LABEL="Curation Log" ';
+	echo 'MDTYPE="OTHER" ';
+	echo 'OTHERMDTYPE="CURATIONLOG" ';
+
+	echo ">\n<METS:xmlData>\n";
+
+	foreach($logItems as $logItem) {
+	  echo '<logEvent>';
+	  echo 'Item '.$logItem['type'].' \nby user '.$logItem['user'].' \nat '.$logItem['time'];
+	  if(isset($logItem['value']))
+	    echo '\n '.$logItem['value'];
+	  echo '</logEvent>';
+	}
+
+	echo "</METS:mdwrap>";
+	echo "</METS:xmldata>";
+    }
+
+    echo "</METS:amdSec>\n";
+
+    //----FILE AmdSecs---//
+
+    $fileAdmIds = array();
+    $i=0;
+    foreach($files as $file)
+      {
+	$flag=false;
+        ob_start();
+	echo "\n<METS:amdSec ";
+	echo 'ID="AMD_FILE'.$file->item_id.$i.'" ';
+	echo ">\n";
+
+	$rightsMD = "";
+	$sourceMD = "";
+	$techMD = "";
+	$digiprovMD = "";
+	$md_start = "";
+	$md_end = "";
+	$mdWrap = array();
+
+	foreach($this->admElements as $elementSetName => $elements)
+	  {
+	    $eSSlug=$this->_getElementSetSlug($elementSetName);
+
+	    ob_start();
+	    echo '<METS:mdWrap ';
+	    echo 'ID="MDW_FILE'.$file->item_id.$i.'" ';
+	    echo 'LABEL="'.$elementSetName.'" ';
+	    if($this->_is_type_other($eSSlug))
+	      {
+		echo 'MDTYPE="OTHER" ';
+		if($eSSlug==="unknown")
+		  $eSSlug = "";
+		echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
+	      }
+	    echo ">\n<METS:xmlData>\n";
+	    $MDwrap['begin']=ob_get_clean();
+	
+	    if($eSSlug!=="")
+	      $eSSlug .= ":";
+
+	    foreach($elements as $element)
+	      {
+		$MDtype = $this->_admElNames[$element->name];
+
+		$elementTexts =  $file->getElementTexts($elementSetName,$element->name);
+
+		if(empty($elementTexts))
+		  continue;
+
+		$flag = true;
+		
+		ob_start();
+		foreach($elementTexts as $elementText)
+		  {
+		    echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+		    echo $elementText->text;
+		    echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+		  }
+		$MDwrap[$MDtype] = ob_get_clean();
+	      }
+	    
+	    ob_start();
+	    echo "</METS:xmlData>\n";
+	    echo "</METS:mdWrap>\n";
+	    $MDwrap['end']=ob_get_clean();
+
+	    if(!empty($MDwrap['rights']))
+	      echo($MDwrap['begin']."<mets:techMD>".$MDwrap['rights']."</mets:techMD>".$MDwrap['end']);
+	    if(!empty($MDwrap['source']))
+	      echo($MDwrap['begin']."<mets:sourceMD>".$MDwrap['source']."</mets:sourceMD>".$MDwrap['end']);
+	    if(!empty($MDwrap['tech']))
+	      echo($MDwrap['begin']."<mets:techMD>".$MDwrap['tech']."</mets:techMD>".$MDwrap['end']);
+	    if(!empty($MDwrap['digiprov']))
+	      echo($MDwrap['begin']."\n<mets:digiprovMD>\n".$MDwrap['digiprov']."\n</mets:digiprovMD>\n".$MDwrap['end']);
+
+	    echo "</METS:xmlData>\n";
+	    echo "</METS:mdWrap>\n";
+
+	  }    
+	echo "</METS:amdSec>\n";
+
+	if($flag) {
+	  $fileAdmIds[$file->item_id] = 'AMD_FILE'.$file->item_id.$i;
+	  ob_end_flush();
+	}else{
+	  ob_end_clean();
+	}
+      }
 
     //--------------------
     //FILES
@@ -280,39 +463,23 @@ Class MetsExporter
 
     echo "\n<METS:fileSec ";
     echo 'ID="FILES_ITEM'.$itemID.'" ';
+    if(isset($fileAdmIds[$file->item_id]))
+      echo 'AMDID="'.$fileAdmIds[$file->item_id].'" ';
     echo ">\n";
-
-    //echo '<METS:fileGrp ';
-    //echo 'ID="'..'" ';
-    //echo 'ADMID="'..'" ';
-    //echo 'VERSDATE="'..'" ';
-    //echo 'USE="'..'" ';
-    //echo ">\n";
 
     $i=0;
     foreach($files as $file)
       {
-	//echo "<h2>".$file->filename."</h2>";
 	echo '<METS:file ';
 	echo 'ID="FILE'.$file->item_id.$i.'" ';
 	echo 'MIMETYPE="'.$file->mime_type.'" ';
-	//echo 'SEQ="'..'" ';
 	echo 'SIZE="'.$file->size.'" ';
 	echo 'CREATED="'.$file->added.'" ';
-	//echo 'CHECKSUM="'..'" ';
-	//echo 'CHECKSUMTYPE="'..'" ';
-	//echo 'OWNERID="'..'" ';
-	//echo 'ADMID="AMD_FILE'.$file->item_id.$i.'" ';
 	echo 'DMDID="DMD_FILE'.$file->item_id.$i.'" ';
-	//echo 'GROUPID="'..'" ';
-	//echo 'USE="'..'" ';
 	echo ">\n";
 
 	echo '<FLocat ';
-	//echo 'ID="'..'" ';
 	echo 'LOCTYPE="URL" ';
-	//echo 'OTHERLOCTYPE="'..'" ';
-	//echo 'USE="'..'" ';
 	echo 'xlink:href="'.$file->getWebPath().'" ';
 	echo "></FLocat>\n";
      
