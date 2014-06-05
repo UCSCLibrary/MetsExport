@@ -12,11 +12,11 @@ if(!isset($itemID))
   die('ERROR: item ID not set');
 
 header('Content-Type: application/octet-stream');
-	header('Content-Disposition: attachment; filename="Item_'.$itemID.'_METS.xml"');
+header('Content-Disposition: attachment; filename="Item_'.$itemID.'_METS.xml"');
 
 try{
   echo $metsExporter->exportItem($itemID);
 } catch (Exception $e) {
-    echo 'Exception while exporting item: ',  $e->getMessage(), "\n";
+  $this->flashMessenger->addMessage($e->getMessage(),'error');;
 }
 ?>

@@ -16,6 +16,6 @@ if(!isset($collectionID))
 try{
   echo $metsExporter->exportCollection($collectionID);
 } catch (Exception $e) {
-    echo 'Exception while exporting collection: ',  $e->getMessage(), "\n";
+  $this->flashMessenger->addMessage($e->getMessage(),'error');
 }
 ?>

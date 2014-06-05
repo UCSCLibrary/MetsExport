@@ -24,6 +24,7 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
 			      'uninstall', 
 			      'config'
 			      );
+
     /**
      * @var array $_filters Filters for the plugin.
      */
@@ -41,6 +42,10 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
     /*
      * Define the METS context and set browser headers 
      * to output an XML file with a .mets extension
+     *
+     *@param array $contexts The unfiltered response contexts
+     *@return array $contexts The filtered response contexts 
+     *(with the METS ones added)
      */
     public function filterResponseContexts($contexts)
     {
@@ -59,15 +64,24 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
 
     /**
      * Display the plugin config form.
+     *
+     *@return void
      */
     public function hookConfigForm() {
-      require_once dirname(__FILE__) . '/forms/ConfigForm.php';
-      $form = new MetsExport_Form_Config();
-      echo($form->render());
+
+      try{
+	require_once dirname(__FILE__) . '/forms/ConfigForm.php';
+	$form = new MetsExport_Form_Config();
+	echo($form->render());
+      }catch(Exception $e) {
+	throw $e; 
+      }  //end try-catch
     }
 
     /**
      * Set the options from the config form input.
+     *
+     *@return void
      */
     public function hookConfig() {
       if(isset($_REQUEST['descMeta']))
@@ -76,14 +90,15 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
 	    require_once dirname(__FILE__) . '/forms/ConfigForm.php';
 	    MetsExport_Form_Config::ProcessPost();
 	  }catch(Exception $e) {
-	    $flashMessenger = $this->_helper->FlashMessenger;
-	    $flashMessenger->addMessage("Unable to save new Mets Export options","error");  
-	  }
-	}
+	    throw $e;
+	  } //end try-catch
+	} //end if
     }
 
    /**
-     * Install the plugin.
+     * Create options and load defaults on plugin install.
+     *
+     *@return void
      */
     public function hookInstall()
     {
@@ -107,7 +122,9 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
     }
 
     /**
-     * Uninstall the plugin.
+     * Drop this plugins option from the db on plugin uninstall
+     *
+     *@return void
      */
     public function hookUninstall()
     {   
@@ -117,6 +134,9 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
     /**
      *  Add a button on the collection display page to export the 
      * collection as a zipped array of .mets files
+     *
+     *@param array $args Parameters sent to the plugin hook from Omeka
+     *@return void
      */
     public function hookAdminCollectionsShow($args) {
       $collection = $args['collection'];
@@ -126,6 +146,11 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
 
     /**
      * Add METS format to Omeka item output list
+     *
+     *@param array $contexts The unfiltered action contexts
+     *@param array $args Parameters sent to the plugin hook from Omeka
+     *@return array $contexts The filtered action contexts
+     *(with the Mets contexts added)
      */
     public function filterActionContexts($contexts, $args)
     {
@@ -137,6 +162,11 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
       return $contexts;
     }
 
+    /**
+     *Queue javascript and css files when the admin section loads
+     *
+     *@return void
+     */
     public function hookAdminHead()
     {
       queue_js_file('MetsExport');

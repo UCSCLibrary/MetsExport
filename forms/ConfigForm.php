@@ -66,6 +66,7 @@ class MetsExport_Form_Config extends Omeka_Form
 						  'label'         => __('Descriptive metadata elements'),
 						  'description'   => __('Metadata elements in this list will be included in the "descriptive metadata" section of each item\'s METS file'),
 						  'order'         => 3,
+						  'validators'    => array( array('alpha', false, array("allowWhiteSpace" => true))),
 						  'id'            => 'desc-meta',
 						  'multiOptions'       => $metaElementOptions['desc']
 						  )
@@ -84,6 +85,7 @@ class MetsExport_Form_Config extends Omeka_Form
 						      'label'         => __('Administrative metadata elements'),
 						      'description'   => __('Metadata elements in this list will be included in the "administrative metadata" section of each item\'s METS file'),
 						      'order'         => 6,
+						      'validators'    => array( array('alpha', false, array("allowWhiteSpace" => true))),
 						      'id'            => 'adm-meta',
 						      'multiOptions'       => $metaElementOptions['adm']
 						      )
@@ -96,6 +98,8 @@ class MetsExport_Form_Config extends Omeka_Form
 	    'order'         => 5
 						       )
 		      );
+
+
     /*
     $this->addElement('submit', 'metsSubmitButton', array(
 	    'label'=>'Save Options',
@@ -104,6 +108,26 @@ class MetsExport_Form_Config extends Omeka_Form
 						       )
 		  );
     */
+
+    $this->addElement('radio', 'updateDialog', array(
+            'label'=>'Metadata type',
+	    'description' => 'Administrative metadata in METS files are divided into types. Please select the type that best describes the metadata element you are marking as "administrative"',
+	    'id'            => 'updateDialog',
+	    'order'         => 20,
+	    'value' => 'tech',
+	    'multiOptions'  => array(
+				     'tech'=>'Technical (camera info, original format, etc)',
+				     'rights'=>'Rights (licensing, copywright)',
+				     'source'=>'Source (info about an analog source document used to create this digital document)',
+				     'digiprov'=>'Digital Provenance (digital library object\'s life-cycle and history)',
+
+				     )
+							)
+		      );
+
+    $this->getElement('updateDialog')->getDecorator('FieldTag')->setOption('id','updateDialogDiv');
+
+
     $displayGroup = array(
 			  //'derivImages',
 			  'descMeta',
@@ -122,7 +146,7 @@ class MetsExport_Form_Config extends Omeka_Form
   }
 
   /**
-   * Process the data from the form and save changes
+   * Process the data from the form and save changes to options
    *
    *@return void
    */
@@ -141,11 +165,14 @@ class MetsExport_Form_Config extends Omeka_Form
       }
     }
     
-      if(isset($_REQUEST['admElements'])) {
-	$options = array();
+    if(isset($_REQUEST['admElements'])) {
+
+      
+
+      $options = array();
       foreach($_REQUEST['admElements'] as $elementName)
 	{
-	  $options[$elementName]='tech';
+	  $options[$elementName]=$_REQUEST['adm_type_'.str_replace(' ', '', $elementName)];
 	}
       set_option('mets_admElements',serialize($options));
     }
@@ -158,15 +185,16 @@ class MetsExport_Form_Config extends Omeka_Form
    *Return array of metadata elements sorted as descriptive or administrative
    *
    *@return array $elements Array containing two array with the keys 
-   * 'adm' and 'desc' containing all metadata elements between them
+   *'adm' and 'desc' containing all metadata elements between them
    */
   private function _getDescAdmElements() {
     $admElements = unserialize(get_option('mets_admElements'));
     if(!is_array($admElements))
       $admElements = array();
     
-    $db = get_db();
-    $sql = "
+    try{
+      $db = get_db();
+      $sql = "
         SELECT es.name AS element_set_name, e.id AS element_id, 
         e.name AS element_name, it.name AS item_type_name
         FROM {$db->ElementSet} es 
@@ -175,7 +203,10 @@ class MetsExport_Form_Config extends Omeka_Form
         LEFT JOIN {$db->ItemType} it ON ite.item_type_id = it.id 
          WHERE es.record_type IS NULL OR es.record_type = 'Item' 
         ORDER BY es.name, it.name, e.name";
-    $elements = $db->fetchAll($sql);
+      $elements = $db->fetchAll($sql);
+    }catch(Exception $e) {
+      throw new Exception("Error connecting to database");
+    }
 
     $options = array();
 

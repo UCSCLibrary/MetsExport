@@ -6,10 +6,7 @@ jQuery(document).ready(function() {
 
     jQuery('#make-adm-button').click(function(event){
 	event.preventDefault();
-        jQuery('#desc-meta option:selected').each( function() {
-            jQuery('#adm-meta').append("<option value='"+jQuery(this).val()+"'>"+jQuery(this).text()+"</option>");
-            jQuery(this).remove();
-        });
+	jQuery('#updateDialogDiv').dialog('open');
     });
 
 
@@ -21,8 +18,6 @@ jQuery(document).ready(function() {
             jQuery(this).remove();
         });
     });
-
-
 
     jQuery('#install_plugin').click(function(event){
 	if(jQuery('#adm-meta').length > 0) {
@@ -37,6 +32,24 @@ jQuery(document).ready(function() {
 	}
     });
 
+    jQuery('#updateDialogDiv').dialog({
+        autoOpen: false,
+        buttons: {
+            'Update': function() {
+		jQuery('#desc-meta option:selected').each( function() {
+		    jQuery('#adm-meta').append("<option value='"+jQuery(this).val()+"'>"+jQuery(this).text()+"</option>");
+		    jQuery(this).remove();
+		    jQuery('form').append('<input type="hidden" name="adm_type_'+jQuery(this).text().replace(/ /g,'')+'" value="'+jQuery("input[name=updateDialog]").val()+'"/>');
+		});
+		jQuery(this).dialog('close');
+	    },
+
+            'Cancel': function () {
+                jQuery(this).dialog('close');
+            }
+        },
+        width: '800px'
+    }); //end update dialog  
 
 
 });

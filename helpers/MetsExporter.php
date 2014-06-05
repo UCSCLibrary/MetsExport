@@ -2,19 +2,53 @@
 
 Class MetsExporter 
 { 
+  /**
+   *Determines whether to send headers telling the browser to 
+   *download the file automatically
+   *(I think this is obsolete, but have to make sure it is not
+   *referenced anywhere before deleting it)
+   */
   public static $force_download = true;
 
+  /**
+   *An array containing the names of metadata elements
+   *which will be included in the Admin Metadata section,
+   *rather than the Descriptive Metadata section
+   */
   private $_admElNames;
+
+  /**
+   *A structured array of element sets and elements for 
+   *the Admin Metadata section of the mets file
+   */
   private $_admElements = array();
+  
   //private $_includeDeriv = get_option('mets_includeDeriv');
+
+  /**
+   *Determines whether to include item curation logs as 
+   *administrative metadata
+   */
   private $_includeLogs;
 
+  /**
+   *Set up some default values for instance variables when 
+   *class is instantiated
+   *
+   *@return void
+   */
   function __construct()
   {
     $this->_admElNames  = unserialize(get_option('mets_admElements'));
     $this->_includeLogs = get_option('mets_includeLogs');
   }
 
+  /**
+   *Returns METS xml for a given single Omeka item
+   *
+   *@param int $itemID The ID of the Omeka item
+   *@return string $xml The contents of the METS file
+   */
   public function exportItem($itemID)
   {
     ob_start();
@@ -22,6 +56,13 @@ Class MetsExporter
     return ob_get_clean();
   }
 
+  /**
+   *Export an entire collection as a zip file filled with METS xml 
+   *files for each item.
+   *
+   *@param int $collectionID The ID of the omeka collection to export
+   *@return void
+   */
   public function exportCollection($collectionID)
   {
     include_once(dirname(dirname(__FILE__)).'/libraries/zipstream-php-0.2.2/zipstream.php');
@@ -44,6 +85,14 @@ Class MetsExporter
   }
 
 
+  /**
+   *Generate and print xml output for a given Omeka item
+   *
+   *@param int $itemID The ID of the Omeka item
+   *@param bool $force_download If true, headers are sent
+   *telling the browser to download the file. Default: true.
+   *return void
+   */
   private function _generateMETS($itemID,$force_download=true)
   {
     if(!is_numeric($itemID))
@@ -180,7 +229,7 @@ Class MetsExporter
 	    foreach($elementTexts as $elementText)
 	      {
 		echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
-		echo $elementText->text;
+		echo htmlspecialchars($elementText->text);
 		echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
 	      }
 	  }
@@ -246,7 +295,7 @@ Class MetsExporter
 		foreach($elementTexts as $elementText)
 		  {
 		    echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
-		    echo $elementText->text;
+		    echo htmlspecialchars($elementText->text);
 		    echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
 		  }
 	      }
@@ -320,7 +369,7 @@ Class MetsExporter
 	    foreach($elementTexts as $elementText)
 	      {
 		echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
-		echo $elementText->text;
+		echo htmlspecialchars($elementText->text);
 		echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
 	      }
 	    $MDwrap[$MDtype] = ob_get_clean();
@@ -423,7 +472,7 @@ Class MetsExporter
 		foreach($elementTexts as $elementText)
 		  {
 		    echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
-		    echo $elementText->text;
+		    echo htmlspecialchars($elementText->text);
 		    echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
 		  }
 		$MDwrap[$MDtype] = ob_get_clean();
@@ -531,8 +580,13 @@ Class MetsExporter
 
   }
 
-  
 
+  /*
+   *Return an array of agents responsible for this resource
+   *
+   *@param Object $item Omeka record for the item being exported
+   *@return array $agents An array of agents and their roles
+   */
   private function _getAgents($item)
   {
     $owner = $item->getOwner();
@@ -545,6 +599,14 @@ Class MetsExporter
   
   }
 
+  /**
+   *Retrieve the slug for a given metadata element set
+   *
+   *@param string $elementSetName The name of the metadata element
+   *set currently being exported
+   *@return string $slug The standard shortened form of the 
+   *metadata element set name, or "unknown"
+   */
   private function _getElementSetSlug($elementSetName)
   {
     //TODO - add support for all common metadata element sets
@@ -559,6 +621,14 @@ Class MetsExporter
 
   }
 
+  /**
+   *Determine whether a given metadata element set is
+   *recognized or not based on its slug
+   *
+   *@param
+   *@return bool $isOther True if the element set should be of 
+   *type "other", false otherwise
+   */
   private function _is_type_other($eSSlug)
   {
     if($eSSlug==="unknown")
