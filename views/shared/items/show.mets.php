@@ -1,4 +1,12 @@
 <?php
+/**
+ * METS Export item view script 
+ *
+ * Output a single METS file for an Omeka item.
+ *
+ * @copyright Copyright 2014 UCSC Library Digital Initiatives
+ * @license http://www.gnu.org/licenses/gpl-3.0.txt GNU GPLv3
+ */
 
 include_once(dirname(dirname(dirname(dirname(__FILE__)))).'/helpers/MetsExporter.php');
 

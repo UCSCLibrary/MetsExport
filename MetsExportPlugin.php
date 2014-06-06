@@ -39,7 +39,7 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
 			       'mets_admElements'=>""
 			       );
     
-    /*
+    /**
      * Define the METS context and set browser headers 
      * to output an XML file with a .mets extension
      *

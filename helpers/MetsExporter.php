@@ -1,5 +1,15 @@
 <?php
+/**
+ * METS Export Plugin Helper Classes
+ *
+ * @copyright Copyright 2014 UCSC Library Digital Initiatives
+ * @license http://www.gnu.org/licenses/gpl-3.0.txt GNU GPLv3
+ */
 
+
+/**
+ * METS Export plugin helper class for doing the actual exporting work
+ */
 Class MetsExporter 
 { 
   /**
@@ -581,7 +591,7 @@ Class MetsExporter
   }
 
 
-  /*
+  /**
    *Return an array of agents responsible for this resource
    *
    *@param Object $item Omeka record for the item being exported
@@ -625,7 +635,7 @@ Class MetsExporter
    *Determine whether a given metadata element set is
    *recognized or not based on its slug
    *
-   *@param
+   *@param string $eSSlug A unique identifier for the element set to check
    *@return bool $isOther True if the element set should be of 
    *type "other", false otherwise
    */
