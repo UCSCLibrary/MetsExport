@@ -208,12 +208,13 @@ Class MetsExporter
 	echo '<METS:mdWrap ';
 	echo 'ID="MDW_ITEM'.$itemID.'_'.$eSSlug.'" ';
 	echo 'LABEL="'.$elementSetName.'" ';
-	if($this->_is_type_other($eSSlug))
-	  {
-	    echo 'MDTYPE="OTHER" ';
-	    $eSSlug = "";
-	    echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
-	  }
+	if($this->_is_type_other($eSSlug))  {
+	  echo 'MDTYPE="OTHER" ';
+	  $eSSlug = "";
+	  echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
+	} else {
+	  echo 'MDTYPE="DC" ';
+	}
 	echo ">\n";
 
 	echo "<METS:xmlData>\n";
@@ -277,13 +278,14 @@ Class MetsExporter
 	    echo 'ID="MDW_FILE'.$file->item_id.$i.'" ';
 	    //echo 'MIMETYPE="'..'" ';
 	    echo 'LABEL="'.$elementSetName.'" ';
-	    if($this->_is_type_other($eSSlug))
-	      {
-		echo 'MDTYPE="OTHER" ';
-		if($eSSlug==="unknown")
-		  $eSSlug = "";
-		echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
-	      }
+	    if($this->_is_type_other($eSSlug))    {
+	      echo 'MDTYPE="OTHER" ';
+	      if($eSSlug==="unknown")
+		$eSSlug = "";
+	      echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
+	    } else {
+	      echo 'MDTYPE="DC" ';
+	    }
 	    echo ">\n";
 
 	    echo "<METS:xmlData>\n";
@@ -316,6 +318,8 @@ Class MetsExporter
 	      ob_end_flush();
 	    else
 	      ob_end_clean();
+
+	    $i++;
 	  }    
 	echo "</METS:dmdSec>\n";
       }
@@ -347,19 +351,20 @@ Class MetsExporter
 
 	$eSSlug=$this->_getElementSetSlug($elementSetName);
     
-
 	ob_start();
 	echo '<METS:mdWrap ';
 	echo 'ID="MDW_ITEM'.$itemID.'_'.$eSSlug.'" ';
 	echo 'LABEL="'.$elementSetName.'" ';
-	if($this->_is_type_other($eSSlug))
-	  {
+	if($this->_is_type_other($eSSlug))  {
 	    echo 'MDTYPE="OTHER" ';
 	    $eSSlug = "";
 	    echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
-	  }
+	} else {
+	  echo 'MDTYPE="DC" ';
+	}
 
-	echo ">\n<METS:xmlData>\n";
+	//echo ">\n<METS:xmlData>\n";
+	echo ">\n";
 
 	$MDwrap['begin'] = ob_get_clean();
 
@@ -386,18 +391,18 @@ Class MetsExporter
 	  }
 
 	ob_start();
-	echo "</METS:xmlData>\n";
+	//echo "</METS:xmlData>\n";
 	echo "</METS:mdWrap>\n";
 	$MDwrap['end']=ob_get_clean();
 
 	if(!empty($MDwrap['rights']))
-	  echo($MDwrap['begin']."<mets:techMD>".$MDwrap['rights']."</mets:techMD>".$MDwrap['end']);
+	  echo($MDwrap['begin']."<METS:techMD>".$MDwrap['rights']."</METS:techMD>".$MDwrap['end']);
 	if(!empty($MDwrap['source']))
-	  echo($MDwrap['begin']."<mets:sourceMD>".$MDwrap['source']."</mets:sourceMD>".$MDwrap['end']);
+	  echo($MDwrap['begin']."<METS:sourceMD>".$MDwrap['source']."</METS:sourceMD>".$MDwrap['end']);
 	if(!empty($MDwrap['tech']))
-	  echo($MDwrap['begin']."<mets:techMD>".$MDwrap['tech']."</mets:techMD>".$MDwrap['end']);
+	  echo($MDwrap['begin']."<METS:techMD>".$MDwrap['tech']."</METS:techMD>".$MDwrap['end']);
 	if(!empty($MDwrap['digiprov']))
-	  echo($MDwrap['begin']."\n<mets:digiprovMD>\n".$MDwrap['digiprov']."\n</mets:digiprovMD>\n".$MDwrap['end']);
+	  echo($MDwrap['begin']."\n<METS:digiprovMD>\n".$MDwrap['digiprov']."\n</METS:digiprovMD>\n".$MDwrap['end']);
 
       }
 
@@ -454,13 +459,14 @@ Class MetsExporter
 	    echo '<METS:mdWrap ';
 	    echo 'ID="MDW_FILE'.$file->item_id.$i.'" ';
 	    echo 'LABEL="'.$elementSetName.'" ';
-	    if($this->_is_type_other($eSSlug))
-	      {
-		echo 'MDTYPE="OTHER" ';
-		if($eSSlug==="unknown")
-		  $eSSlug = "";
-		echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
-	      }
+	    if($this->_is_type_other($eSSlug))   {
+	      echo 'MDTYPE="OTHER" ';
+	      if($eSSlug==="unknown")
+		$eSSlug = "";
+	      echo 'OTHERMDTYPE="'.strtoupper(preg_replace('/\s+/', '', $elementSetName)).'" ';
+	    } else {
+	      echo 'MDTYPE="DC" ';
+	    }
 	    echo ">\n<METS:xmlData>\n";
 	    $MDwrap['begin']=ob_get_clean();
 	
