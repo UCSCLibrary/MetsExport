@@ -14,7 +14,7 @@ $collection = get_current_record('collection');
 $collectionID = $collection->id;
 
 header('Content-Type: application/zip');
-header('Content-Disposition: attachment; filename="Collection_'.$collection->id.'.zip"');
+header('Content-Disposition: attachment; filename="'.$collection->id.'.zip"');
 
 $metsExporter = new MetsExporter();
 

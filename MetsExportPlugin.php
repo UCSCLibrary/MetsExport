@@ -53,9 +53,14 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
       $contexts['METS'] = array('suffix' => 'mets',
 				'headers' => array('Content-Type' => 'application/octet-stream')
 				);
+
+      $contexts['METScol'] = array('suffix' => 'metscol',
+				'headers' => array('Content-Type' => 'application/octet-stream')
+				);
       
       $contexts['METSzip'] = array('suffix' => 'metszip',
-      				   'headers' => array('Content-Type' => 'application/octet-stream')
+      				   //'headers' => array('Content-Type' => 'application/octet-stream')
+				   'headers' => array('Content-Type' => 'text/xml')
       );
    
       return $contexts;
@@ -140,7 +145,8 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
      */
     public function hookAdminCollectionsShow($args) {
       $collection = $args['collection'];
-      echo '<a href="'.$collection->id.'?output=METSzip"><button>Export as .mets</button></a>';
+      echo '<a href="'.$collection->id.'?output=METSzip"><button>Export as zip file of METS xml files</button></a><br>';
+      echo '<a href="'.$collection->id.'?output=METScol"><button>Export as single mets xml file</button></a>';
     }
 
 
@@ -154,10 +160,12 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
      */
     public function filterActionContexts($contexts, $args)
     {
-      if($args['controller'] instanceOf ItemsController)
+      if($args['controller'] instanceOf ItemsController) {
 	$contexts['show'][] = 'METS';
-      else if($args['controller'] instanceOf CollectionsController)
+      } else if($args['controller'] instanceOf CollectionsController) {
 	$contexts['show'][] = 'METSzip';
+	$contexts['show'][] = 'METScol';
+      }
 
       return $contexts;
     }

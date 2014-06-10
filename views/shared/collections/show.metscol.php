@@ -13,8 +13,8 @@ include_once(dirname(dirname(dirname(dirname(__FILE__)))).'/helpers/MetsExporter
 $collection = get_current_record('collection');
 $collectionID = $collection->id;
 
-header('Content-Type: application/zip');
-header('Content-Disposition: attachment; filename="Collection_'.$collection->id.'.zip"');
+//header('Content-Type: application/zip');
+header('Content-Disposition: attachment; filename="Collection_'.$collection->id.'.mets.xml"');
 
 $metsExporter = new MetsExporter();
 
@@ -22,7 +22,7 @@ if(!isset($collectionID))
   die('ERROR: collection ID not set');
 
 try{
-  echo $metsExporter->exportCollectionZip($collectionID);
+  echo $metsExporter->exportCollection($collectionID);
 } catch (Exception $e) {
   die($e->getMessage());
 }
