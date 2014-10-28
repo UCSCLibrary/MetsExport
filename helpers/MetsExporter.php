@@ -1118,7 +1118,7 @@ Class MetsExporter
 
     echo '<METS:div ';
     echo 'TYPE="ITEM" ';
-    echo 'DMDID="DMD_ITEM'.$item.'" ';
+    echo 'DMDID="DMD_ITEM'.$itemID.'" ';
     echo 'AMDID="AMD_ITEM'.$itemID.'" ';
     echo ">\n";
 
