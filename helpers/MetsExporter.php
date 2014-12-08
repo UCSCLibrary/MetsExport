@@ -258,6 +258,8 @@ Class MetsExporter
 
 	foreach($elements as $element)
 	  {
+              $eSlug = $this->_getElementSlug($element->name,$elementSetName);
+              
 	    if(array_key_exists($element->name,$this->_admElNames))
 	      {
 		if(!array_key_exists($elementSetName,$this->_admElements))
@@ -273,9 +275,12 @@ Class MetsExporter
 
 	    foreach($elementTexts as $elementText)
 	      {
-		echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
-		echo htmlspecialchars($elementText->text);
-		echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+    //echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                      echo '<'.$eSSlug.$eSlug.">";
+		    echo htmlspecialchars($elementText->text);
+		    echo "</".$eSSlug.$eSlug.">\n";
+
+                      //echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
 	      }
 	  }
 
@@ -329,6 +334,7 @@ Class MetsExporter
 
 	    foreach($elements as $element)
 	      {
+                  $eSlug = $this->_getElementSlug($element->name,$elementSetName);
 		if(array_key_exists($element->name,$this->_admElNames))
 		  continue;
 
@@ -340,9 +346,12 @@ Class MetsExporter
 
 		foreach($elementTexts as $elementText)
 		  {
-		    echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+
+                      //echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                      echo '<'.$eSSlug.$eSlug.">";
 		    echo htmlspecialchars($elementText->text);
-		    echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+		    //echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+                    echo "</".$eSSlug.$eSlug.">\n";
 		  }
 	      }
 
@@ -403,6 +412,7 @@ Class MetsExporter
 
 	foreach($elements as $element)
 	  {
+              $eSlug = $this->_getElementSlug($element->name,$elementSetName);
 	    $MDtype = $this->_admElNames[$element->name];
 
 	    $elementTexts =  $item->getElementTexts($elementSetName,$element->name);
@@ -413,9 +423,11 @@ Class MetsExporter
 	    ob_start();
 	    foreach($elementTexts as $elementText)
 	      {
-		echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                  //echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                  echo '<'.$eSSlug.$eSlug.">";
 		echo htmlspecialchars($elementText->text);
-		echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+		//echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+                echo "</".$eSSlug.$eSlug.">\n";
 	      }
 	    $MDwrap[$MDtype] = ob_get_clean();
 	  }
@@ -503,8 +515,10 @@ Class MetsExporter
 	    if($eSSlug!=="")
 	      $eSSlug .= ":";
 
+
 	    foreach($elements as $element)
 	      {
+                  $eSlug = $this->_getElementSlug($element->name,$elementSetName);
 		$MDtype = $this->_admElNames[$element->name];
 
 		$elementTexts =  $file->getElementTexts($elementSetName,$element->name);
@@ -517,9 +531,11 @@ Class MetsExporter
 		ob_start();
 		foreach($elementTexts as $elementText)
 		  {
-		    echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                      //echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                      echo '<'.$eSSlug.$eSlug.">";
 		    echo htmlspecialchars($elementText->text);
-		    echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+		    //echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+                    echo "</".$eSSlug.$eSlug.">\n";
 		  }
 		$MDwrap[$MDtype] = ob_get_clean();
 	      }
@@ -772,6 +788,7 @@ Class MetsExporter
 
 	foreach($elements as $element)
 	  {
+              $eSlug = $this->_getElementSlug($element->name,$elementSetName);
 	    if(array_key_exists($element->name,$this->_admElNames))
 	      {
 		if(!array_key_exists($elementSetName,$this->_admElements))
@@ -787,9 +804,11 @@ Class MetsExporter
 
 	    foreach($elementTexts as $elementText)
 	      {
-		echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                  //echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                  echo '<'.$eSSlug.$eSlug.">";
 		echo htmlspecialchars($elementText->text);
-		echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+		//echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+                echo "</".$eSSlug.$eSlug.">\n";
 	      }
 	  }
 
@@ -843,6 +862,7 @@ Class MetsExporter
 
 	    foreach($elements as $element)
 	      {
+                  $eSlug = $this->_getElementSlug($element->name,$elementSetName);
 		if(array_key_exists($element->name,$this->_admElNames))
 		  continue;
 
@@ -854,9 +874,11 @@ Class MetsExporter
 
 		foreach($elementTexts as $elementText)
 		  {
-		    echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                      //echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                      echo '<'.$eSSlug.$eSlug.">";
 		    echo htmlspecialchars($elementText->text);
-		    echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+		    //echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+                    echo "</".$eSSlug.$eSlug.">\n";
 		  }
 	      }
 
@@ -921,6 +943,7 @@ Class MetsExporter
 
 	foreach($elements as $element)
 	  {
+              $eSlug = $this->_getElementSlug($element->name,$elementSetName);
 	    $MDtype = $this->_admElNames[$element->name];
 
 	    $elementTexts =  $item->getElementTexts($elementSetName,$element->name);
@@ -931,9 +954,11 @@ Class MetsExporter
 	    ob_start();
 	    foreach($elementTexts as $elementText)
 	      {
-		echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                  //echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                  echo '<'.$eSSlug.$eSlug.">";
 		echo htmlspecialchars($elementText->text);
-		echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+		//echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+                echo "</".$eSSlug.$eSlug.">\n";
 	      }
 	    $MDwrap[$MDtype] = ob_get_clean();
 	  }
@@ -1024,6 +1049,7 @@ Class MetsExporter
 	    foreach($elements as $element)
 	      {
 		$MDtype = $this->_admElNames[$element->name];
+                $eSlug = $this->_getElementSlug($element->name,$elementSetName);
 
 		$elementTexts =  $file->getElementTexts($elementSetName,$element->name);
 
@@ -1035,9 +1061,12 @@ Class MetsExporter
 		ob_start();
 		foreach($elementTexts as $elementText)
 		  {
-		    echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                      //echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
+                      echo '<'.$eSSlug.$eSlug.">";
 		    echo htmlspecialchars($elementText->text);
-		    echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
+		    echo "</".$eSSlug.$eSlug.">\n";
+
+                      //echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
 		  }
 		$MDwrap[$MDtype] = ob_get_clean();
 	      }
@@ -1178,12 +1207,34 @@ Class MetsExporter
       {
       case 'Dublin Core':
 	return 'dc';
-	break;
+      case 'UCLDC Schema':
+          return 'ucldc_schema':
       default:
-	return 'unknown';
+          $elementSetName = str_replace(' ', '', $elementSetName);          
+          return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $elementSetName));
       }
 
   }
+
+  
+  /**
+   *Retrieve the slug for a given metadata element name
+   *
+   *@param string $elementName The name of the metadata element
+   * currently being exported
+   *@return string $slug The standard shortened form of the 
+   *metadata element name, or "unknown"
+   */
+  private function _getElementSlug($elementName,$elementSetName='')
+  {          
+      if($elementSetName="UCLDC Schema" && plugin_is_active('NuxeoLink')) {
+          include_once(dirname(dirname(dirname(__FILE__))).'/NuxeoLink/helpers/APIfunctions.php');
+          return NuxeoOmekaSession::GetElementSlug($elementName);
+      }
+      return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $elementName));
+  }
+
+  
 
   /**
    *Determine whether a given metadata element set is
