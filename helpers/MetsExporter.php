@@ -1208,7 +1208,7 @@ Class MetsExporter
       case 'Dublin Core':
 	return 'dc';
       case 'UCLDC Schema':
-          return 'ucldc_schema':
+          return 'ucldc_schema';
       default:
           $elementSetName = str_replace(' ', '', $elementSetName);          
           return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $elementSetName));
