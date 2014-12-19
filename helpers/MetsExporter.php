@@ -1227,8 +1227,8 @@ Class MetsExporter
    */
   private function _getElementSlug($elementName,$elementSetName='')
   {          
-      if($elementSetName="UCLDC Schema" && plugin_is_active('NuxeoLink')) {
-          include_once(dirname(dirname(dirname(__FILE__))).'/NuxeoLink/helpers/APIfunctions.php');
+      if($elementSetName=="UCLDC Schema" && plugin_is_active('NuxeoLink')) {
+          require_once(dirname(dirname(dirname(__FILE__))).'/NuxeoLink/helpers/APIfunctions.php');
           return NuxeoOmekaSession::GetElementSlug($elementName);
       }
       return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $elementName));
