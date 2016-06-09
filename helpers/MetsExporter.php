@@ -449,8 +449,15 @@ Class MetsExporter
       }
 
     if($this->_includeLogs && plugin_is_active('HistoryLog')) {
-	$logItems = HistoryLog_Helper_Log::GetItemLog($itemID,999);
-	
+        $params = array(
+            'record_type' => 'Item',
+            'record_id' => $itemID,
+            'sort_field' => 'added',
+            'sort_dir' => 'd',
+        );
+        $limit = 999;
+        $logEntries = get_db()->getTable('HistoryLogEntry')->findBy($params, $limit);
+
 	echo '<METS:mdWrap ';
 	echo 'ID="MDW_ITEM'.$itemID.'_CURATIONLOG" ';
 	echo 'LABEL="Curation Log" ';
@@ -459,13 +466,13 @@ Class MetsExporter
 
 	echo ">\n<METS:xmlData>\n";
 
-	foreach($logItems as $logItem) {
-	  echo '<logEvent>';
-	  echo 'Item '.$logItem['type'].' \nby user '.$logItem['user'].' \nat '.$logItem['time'];
-	  if(isset($logItem['value']))
-	    echo '\n '.$logItem['value'];
-	  echo '</logEvent>';
-	}
+        foreach($logEntries as $logEntry) {
+            echo '<logEvent>';
+            echo __("Item changed \nby user %d at %s.",
+               $logEntry->user_id, $logEntry->added);
+            echo $logEntry->displayChanges();
+            echo '</logEvent>';
+        }
 
 	echo "</METS:xmlData>";
 	echo "</METS:mdWrap>";
@@ -980,8 +987,15 @@ Class MetsExporter
       }
 
     if($this->_includeLogs && plugin_is_active('HistoryLog')) {
-	$logItems = HistoryLog_Helper_Log::GetItemLog($itemID,999);
-	
+        $params = array(
+            'record_type' => 'Item',
+            'record_id' => $itemID,
+            'sort_field' => 'added',
+            'sort_dir' => 'd',
+        );
+        $limit = 999;
+        $logEntries = get_db()->getTable('HistoryLogEntry')->findBy($params, $limit);
+
 	echo '<METS:mdWrap ';
 	echo 'ID="MDW_ITEM'.$itemID.'_CURATIONLOG" ';
 	echo 'LABEL="Curation Log" ';
@@ -990,13 +1004,13 @@ Class MetsExporter
 
 	echo ">\n<METS:xmlData>\n";
 
-	foreach($logItems as $logItem) {
-	  echo '<logEvent>';
-	  echo 'Item '.$logItem['type'].' \nby user '.$logItem['user'].' \nat '.$logItem['time'];
-	  if(isset($logItem['value']))
-	    echo '\n '.$logItem['value'];
-	  echo '</logEvent>';
-	}
+        foreach($logEntries as $logEntry) {
+            echo '<logEvent>';
+            echo __("Item changed \nby user %d at %s.",
+               $logEntry->user_id, $logEntry->added);
+            echo $logEntry->displayChanges();
+            echo '</logEvent>';
+        }
 
 	echo "</METS:mdWrap>";
 	echo "</METS:xmldata>";
