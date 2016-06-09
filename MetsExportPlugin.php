@@ -73,7 +73,7 @@ class MetsExportPlugin extends Omeka_Plugin_AbstractPlugin
      *@return void
      */
     public function hookConfigForm() {
-
+        
       try{
 	require_once dirname(__FILE__) . '/forms/ConfigForm.php';
 	$form = new MetsExport_Form_Config();

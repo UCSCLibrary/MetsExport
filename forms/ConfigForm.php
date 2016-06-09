@@ -26,6 +26,13 @@ class MetsExport_Form_Config extends Omeka_Form
 	
   }
 
+    public function render()
+    {
+        $formString = parent::render();
+        $formContents =  preg_replace('/<\/?form(.*)>/U','',$formString);
+        return $formContents;
+    }
+
   /**
    * Define the form elements.
    *
