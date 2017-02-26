@@ -10,10 +10,10 @@
 /**
  * METS Export plugin helper class for doing the actual exporting work
  */
-Class MetsExporter 
-{ 
+Class MetsExporter
+{
   /**
-   *Determines whether to send headers telling the browser to 
+   *Determines whether to send headers telling the browser to
    *download the file automatically
    *(I think this is obsolete, but have to make sure it is not
    *referenced anywhere before deleting it)
@@ -28,21 +28,21 @@ Class MetsExporter
   private $_admElNames;
 
   /**
-   *A structured array of element sets and elements for 
+   *A structured array of element sets and elements for
    *the Admin Metadata section of the mets file
    */
   private $_admElements = array();
-  
+
   //private $_includeDeriv = get_option('mets_includeDeriv');
 
   /**
-   *Determines whether to include item curation logs as 
+   *Determines whether to include item curation logs as
    *administrative metadata
    */
   private $_includeLogs;
 
   /**
-   *Set up some default values for instance variables when 
+   *Set up some default values for instance variables when
    *class is instantiated
    *
    *@return void
@@ -67,7 +67,7 @@ Class MetsExporter
   }
 
   /**
-   *Export an entire collection as a zip file filled with METS xml 
+   *Export an entire collection as a zip file filled with METS xml
    *files for each item.
    *
    *@param int $collectionID The ID of the omeka collection to export
@@ -78,7 +78,7 @@ Class MetsExporter
     $collection = get_record_by_id("collection",$collectionID);
 
     $items = get_records('Item',array('collection'=>$collectionID),999);
-    
+
     //ob_start();
 
     $this->_generateMetsHeader($collectionID,"Collection");
@@ -91,13 +91,13 @@ Class MetsExporter
 
     $this->_generateMetsStructMap($collectionID,"Collection",$items);
     $this->_generateMetsFooter($collectionID);
-    
+
     //ob_flush();
 
   }
 
   /**
-   *Export an entire collection as a zip file filled with METS xml 
+   *Export an entire collection as a zip file filled with METS xml
    *files for each item.
    *
    *@param int $collectionID The ID of the omeka collection to export
@@ -110,7 +110,7 @@ Class MetsExporter
     $collection = get_record_by_id("collection",$collectionID);
 
     $items = get_records('Item',array('collection'=>$collectionID),999);
-    
+
     error_reporting(0);
 
     $zip = new ZipStream('Collection_'.$collection->id.'.zip');
@@ -126,7 +126,7 @@ Class MetsExporter
 
 
   private function _generateMetsHeader($itemID,$recordType="Item") {
-   
+
     if(!is_numeric($itemID))
         throw new Exception("ERROR: Invalid item ID");
 
@@ -144,7 +144,7 @@ Class MetsExporter
 
     if($recordType=="Item") {
       $typeObj = $item->getItemType();
-      $type=$typeObj->name;
+      $type = $typeObj ? $typeObj->name : 'Item';
     }else{
       $type = $recordType;
     }
@@ -165,7 +165,9 @@ Class MetsExporter
     echo 'ID="'.strtoupper($recordType).'_'.$itemID.'" ';
     echo 'OBJID="'.strtoupper($recordType).'_'.$itemID.'" ';
     echo 'LABEL="'.$title.'" ';
-    echo 'TYPE="'.$type.'" ';
+    if ($type) {
+      echo 'TYPE="'.$type.'" ';
+    }
 
     //echo 'PROFILE="OMEKA PROFILE ONCE IT IS REGISTERED" ';
 
@@ -191,7 +193,7 @@ Class MetsExporter
 	echo 'ROLE="'.$agent[1].'" ';
 	echo 'TYPE="'.$agent[2].'" ';
 	echo ">\n";
-    
+
 	echo "<METS:name>";
 	echo $agent[0];
 	echo "</METS:name>\n";
@@ -229,7 +231,7 @@ Class MetsExporter
     echo "\n<METS:dmdSec ";
     echo 'ID="DMD_'.strtoupper($recordType).'_'.$itemID.'" ';
     echo ">\n";
-    
+
     $elementArray = $item->getAllElements();
 
     foreach($elementArray as $elementSetName => $elements)
@@ -238,7 +240,7 @@ Class MetsExporter
 	$flag = false;
 
 	$eSSlug=$this->_getElementSetSlug($elementSetName);
-    
+
 	echo '<METS:mdWrap ';
 	echo 'ID="MDW_'.strtoupper($recordType).'_'.$itemID.'_'.$eSSlug.'" ';
 	echo 'LABEL="'.$elementSetName.'" ';
@@ -252,14 +254,14 @@ Class MetsExporter
 	echo ">\n";
 
 	echo "<METS:xmlData>\n";
-    
+
 	if($eSSlug!=="")
 	  $eSSlug .= ":";
 
 	foreach($elements as $element)
 	  {
               $eSlug = $this->_getElementSlug($element->name,$elementSetName);
-              
+
 	    if(array_key_exists($element->name,$this->_admElNames))
 	      {
 		if(!array_key_exists($elementSetName,$this->_admElements))
@@ -314,7 +316,7 @@ Class MetsExporter
 	    $eSSlug=$this->_getElementSetSlug($elementSetName);
 
 	    echo '<METS:mdWrap ';
-	    echo 'ID="MDW_FILE'.$file->item_id.$i.'" ';
+	    echo 'ID="MDW_FILE'.$file->item_id.'_'.$i.'" ';
 	    //echo 'MIMETYPE="'..'" ';
 	    echo 'LABEL="'.$elementSetName.'" ';
 	    if($this->_is_type_other($eSSlug))    {
@@ -328,7 +330,7 @@ Class MetsExporter
 	    echo ">\n";
 
 	    echo "<METS:xmlData>\n";
-	
+
 	    if($eSSlug!=="")
 	      $eSSlug .= ":";
 
@@ -363,7 +365,7 @@ Class MetsExporter
 	      ob_end_clean();
 
 	    $i++;
-	  }    
+	  }
 	echo "</METS:dmdSec>\n";
       }
 
@@ -389,7 +391,7 @@ Class MetsExporter
       {
 
 	$eSSlug=$this->_getElementSetSlug($elementSetName);
-    
+
 	ob_start();
 	echo '<METS:mdWrap ';
 	echo 'ID="MDW_ITEM'.$itemID.'_'.$eSSlug.'" ';
@@ -506,7 +508,7 @@ Class MetsExporter
 
 	    ob_start();
 	    echo '<METS:mdWrap ';
-	    echo 'ID="MDW_FILE'.$file->item_id.$i.'" ';
+	    echo 'ID="MDW_FILE'.$file->item_id.'_'.$i.'" ';
 	    echo 'LABEL="'.$elementSetName.'" ';
 	    if($this->_is_type_other($eSSlug))   {
 	      echo 'MDTYPE="OTHER" ';
@@ -518,7 +520,7 @@ Class MetsExporter
 	    }
 	    echo ">\n<METS:xmlData>\n";
 	    $MDwrap['begin']=ob_get_clean();
-	
+
 	    if($eSSlug!=="")
 	      $eSSlug .= ":";
 
@@ -534,7 +536,7 @@ Class MetsExporter
 		  continue;
 
 		$flag = true;
-		
+
 		ob_start();
 		foreach($elementTexts as $elementText)
 		  {
@@ -546,7 +548,7 @@ Class MetsExporter
 		  }
 		$MDwrap[$MDtype] = ob_get_clean();
 	      }
-	    
+
 	    ob_start();
 	    echo "</METS:xmlData>\n";
 	    echo "</METS:mdWrap>\n";
@@ -564,11 +566,11 @@ Class MetsExporter
 	    echo "</METS:xmlData>\n";
 	    echo "</METS:mdWrap>\n";
 
-	  }    
+	  }
 	echo "</METS:amdSec>\n";
 
 	if($flag) {
-	  $fileAdmIds[$file->item_id] = 'AMD_FILE'.$file->item_id.$i;
+	  $fileAdmIds[$file->item_id] = 'AMD_FILE'.$file->item_id.'_'.$i;
 	  ob_end_flush();
 	}else{
 	  ob_end_clean();
@@ -591,7 +593,7 @@ Class MetsExporter
       foreach($files as $file)
 	{
 	  echo '<METS:file ';
-	  echo 'ID="FILE'.$file->item_id.$i.'" ';
+	  echo 'ID="FILE'.$file->item_id.'_'.$i.'" ';
 	  echo 'MIMETYPE="'.$file->mime_type.'" ';
 	  echo 'SIZE="'.$file->size.'" ';
 	  echo 'CREATED="'.$file->added.'" ';
@@ -602,10 +604,10 @@ Class MetsExporter
 	  echo 'LOCTYPE="URL" ';
 	  echo 'xlink:href="'.$file->getWebPath().'" ';
 	  echo "></FLocat>\n";
-     
+
 
 	  echo "</METS:file>\n";
-    
+
 	  $i++;
 	}
       //**TODO** separate fileGroups for derivative images?
@@ -646,13 +648,13 @@ Class MetsExporter
       //files
 
       echo "</METS:div>\n";
-      
+
     }
     /*
     $i=0;
     foreach ($files as $file)
       {
-	echo '<METS:fptr FILEID="FILE'.$file->item_id.$i.'"/>'."\n";
+	echo '<METS:fptr FILEID="FILE'.$file->item_id.'_'.$i++.'"/>'."\n";
 	//--TODO---each file should be grouped by type,
 	//and then with it's deriv. images (if any)
       }
@@ -720,7 +722,9 @@ Class MetsExporter
     echo 'ID="ITEM_'.$itemID.'" ';
     echo 'OBJID="ITEM_'.$itemID.'" ';
     echo 'LABEL="'.$title.'" ';
-    echo 'TYPE="'.$type->name.'" ';
+    if ($type) {
+        echo 'TYPE="'.$type->name.'" ';
+    }
 
     //echo 'PROFILE="OMEKA PROFILE ONCE IT IS REGISTERED" ';
 
@@ -743,7 +747,7 @@ Class MetsExporter
 	echo 'ROLE="'.$agent[1].'" ';
 	echo 'TYPE="'.$agent[2].'" ';
 	echo ">\n";
-    
+
 	echo "<METS:name>";
 	echo $agent[0];
 	echo "</METS:name>\n";
@@ -756,7 +760,7 @@ Class MetsExporter
       }
 
     echo "</METS:metsHdr>\n";
-     
+
     //--------------------
     //DESCRIPTIVE METADATA
     //--------------------
@@ -766,7 +770,7 @@ Class MetsExporter
     echo "\n<METS:dmdSec ";
     echo 'ID="DMD_ITEM'.$itemID.'" ';
     echo ">\n";
-    
+
     $elementArray = $item->getAllElements();
 
     foreach($elementArray as $elementSetName => $elements)
@@ -775,7 +779,7 @@ Class MetsExporter
 	$flag = false;
 
 	$eSSlug=$this->_getElementSetSlug($elementSetName);
-    
+
 	echo '<METS:mdWrap ';
 	echo 'ID="MDW_ITEM'.$itemID.'_'.$eSSlug.'" ';
 	echo 'LABEL="'.$elementSetName.'" ';
@@ -789,7 +793,7 @@ Class MetsExporter
 	echo ">\n";
 
 	echo "<METS:xmlData>\n";
-    
+
 	if($eSSlug!=="")
 	  $eSSlug .= ":";
 
@@ -836,7 +840,7 @@ Class MetsExporter
     foreach($files as $file)
       {
 	echo "\n<METS:dmdSec ";
-	echo 'ID="DMD_FILE'.$file->item_id.$i.'" ';
+	echo 'ID="DMD_FILE'.$file->item_id.'_'.$i.'" ';
 	echo ">\n";
 
 	$elements = $file->getAllElements();
@@ -849,7 +853,7 @@ Class MetsExporter
 	    $eSSlug=$this->_getElementSetSlug($elementSetName);
 
 	    echo '<METS:mdWrap ';
-	    echo 'ID="MDW_FILE'.$file->item_id.$i.'" ';
+	    echo 'ID="MDW_FILE'.$file->item_id.'_'.$i.'" ';
 	    //echo 'MIMETYPE="'..'" ';
 	    echo 'LABEL="'.$elementSetName.'" ';
 	    if($this->_is_type_other($eSSlug))    {
@@ -863,7 +867,7 @@ Class MetsExporter
 	    echo ">\n";
 
 	    echo "<METS:xmlData>\n";
-	
+
 	    if($eSSlug!=="")
 	      $eSSlug .= ":";
 
@@ -897,10 +901,10 @@ Class MetsExporter
 	      ob_end_clean();
 
 	    $i++;
-	  }    
+	  }
 	echo "</METS:dmdSec>\n";
       }
- 
+
     //----COLLECTION dmdsec----//
 
 
@@ -927,7 +931,7 @@ Class MetsExporter
       {
 
 	$eSSlug=$this->_getElementSetSlug($elementSetName);
-    
+
 	ob_start();
 	echo '<METS:mdWrap ';
 	echo 'ID="MDW_ITEM'.$itemID.'_'.$eSSlug.'" ';
@@ -1027,7 +1031,7 @@ Class MetsExporter
 	$flag=false;
         ob_start();
 	echo "\n<METS:amdSec ";
-	echo 'ID="AMD_FILE'.$file->item_id.$i.'" ';
+	echo 'ID="AMD_FILE'.$file->item_id.'_'.$i.'" ';
 	echo ">\n";
 
 	$rightsMD = "";
@@ -1044,7 +1048,7 @@ Class MetsExporter
 
 	    ob_start();
 	    echo '<METS:mdWrap ';
-	    echo 'ID="MDW_FILE'.$file->item_id.$i.'" ';
+	    echo 'ID="MDW_FILE'.$file->item_id.'_'.$i.'" ';
 	    echo 'LABEL="'.$elementSetName.'" ';
 	    if($this->_is_type_other($eSSlug))   {
 	      echo 'MDTYPE="OTHER" ';
@@ -1056,7 +1060,7 @@ Class MetsExporter
 	    }
 	    echo ">\n<METS:xmlData>\n";
 	    $MDwrap['begin']=ob_get_clean();
-	
+
 	    if($eSSlug!=="")
 	      $eSSlug .= ":";
 
@@ -1071,7 +1075,7 @@ Class MetsExporter
 		  continue;
 
 		$flag = true;
-		
+
 		ob_start();
 		foreach($elementTexts as $elementText)
 		  {
@@ -1084,7 +1088,7 @@ Class MetsExporter
 		  }
 		$MDwrap[$MDtype] = ob_get_clean();
 	      }
-	    
+
 	    ob_start();
 	    echo "</METS:xmlData>\n";
 	    echo "</METS:mdWrap>\n";
@@ -1102,11 +1106,11 @@ Class MetsExporter
 	    echo "</METS:xmlData>\n";
 	    echo "</METS:mdWrap>\n";
 
-	  }    
+	  }
 	echo "</METS:amdSec>\n";
 
 	if($flag) {
-	  $fileAdmIds[$file->item_id] = 'AMD_FILE'.$file->item_id.$i;
+	  $fileAdmIds[$file->item_id] = 'AMD_FILE'.$file->item_id.'_'.$i;
 	  ob_end_flush();
 	}else{
 	  ob_end_clean();
@@ -1127,21 +1131,21 @@ Class MetsExporter
     foreach($files as $file)
       {
 	echo '<METS:file ';
-	echo 'ID="FILE'.$file->item_id.$i.'" ';
+	echo 'ID="FILE'.$file->item_id.'_'.$i.'" ';
 	echo 'MIMETYPE="'.$file->mime_type.'" ';
 	echo 'SIZE="'.$file->size.'" ';
 	echo 'CREATED="'.$file->added.'" ';
-	echo 'DMDID="DMD_FILE'.$file->item_id.$i.'" ';
+	echo 'DMDID="DMD_FILE'.$file->item_id.'_'.$i.'" ';
 	echo ">\n";
 
 	echo '<FLocat ';
 	echo 'LOCTYPE="URL" ';
 	echo 'xlink:href="'.$file->getWebPath().'" ';
 	echo "></FLocat>\n";
-     
+
 
 	echo "</METS:file>\n";
-    
+
 	$i++;
       }
     //**TODO** separate fileGroups for derivative images?
@@ -1168,7 +1172,7 @@ Class MetsExporter
     $i=0;
     foreach ($files as $file)
       {
-	echo '<METS:fptr FILEID="FILE'.$file->item_id.$i.'"/>'."\n";
+	echo '<METS:fptr FILEID="FILE'.$file->item_id.'_'.$i++.'"/>'."\n";
 	//--TODO---each file should be grouped by type,
 	//and then with it's deriv. images (if any)
       }
@@ -1200,10 +1204,10 @@ Class MetsExporter
     $currentuser = current_user();
     $rv[]=array($owner->name,"ARCHIVIST","INDIVIDUAL","");
     $rv[]=array($currentuser->name,"CREATOR","INDIVIDUAL","");
-    $rv[]=array("Omeka MetsExport Plugin","OTHER","OTHER","The software used to generate this document is called Omeka MetsExport, which operates as a plugin for Omeka. Documentation can be found at http://github/MetsExport/");
+    $rv[]=array("Omeka MetsExport Plugin","OTHER","OTHER","The software used to generate this document is called Omeka MetsExport, which operates as a plugin for Omeka. Documentation can be found at https://github.com/UCSCLibrary/MetsExport.");
 
     return $rv;
-  
+
   }
 
   /**
@@ -1211,7 +1215,7 @@ Class MetsExporter
    *
    *@param string $elementSetName The name of the metadata element
    *set currently being exported
-   *@return string $slug The standard shortened form of the 
+   *@return string $slug The standard shortened form of the
    *metadata element set name, or "unknown"
    */
   private function _getElementSetSlug($elementSetName)
@@ -1224,23 +1228,23 @@ Class MetsExporter
       case 'UCLDC Schema':
           return 'ucldc_schema';
       default:
-          $elementSetName = str_replace(' ', '', $elementSetName);          
+          $elementSetName = str_replace(' ', '', $elementSetName);
           return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $elementSetName));
       }
 
   }
 
-  
+
   /**
    *Retrieve the slug for a given metadata element name
    *
    *@param string $elementName The name of the metadata element
    * currently being exported
-   *@return string $slug The standard shortened form of the 
+   *@return string $slug The standard shortened form of the
    *metadata element name, or "unknown"
    */
   private function _getElementSlug($elementName,$elementSetName='')
-  {          
+  {
       if($elementSetName=="UCLDC Schema" && plugin_is_active('NuxeoLink')) {
           require_once(dirname(dirname(dirname(__FILE__))).'/NuxeoLink/helpers/APIfunctions.php');
           return NuxeoOmekaSession::GetElementSlug($elementName);
@@ -1248,14 +1252,14 @@ Class MetsExporter
       return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $elementName));
   }
 
-  
+
 
   /**
    *Determine whether a given metadata element set is
    *recognized or not based on its slug
    *
    *@param string $eSSlug A unique identifier for the element set to check
-   *@return bool $isOther True if the element set should be of 
+   *@return bool $isOther True if the element set should be of
    *type "other", false otherwise
    */
   private function _is_type_other($eSSlug)
