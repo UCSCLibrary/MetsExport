@@ -7,23 +7,21 @@
  * @copyright Copyright 2014 UCSC Library Digital Initiatives
  * @license http://www.gnu.org/licenses/gpl-3.0.txt GNU GPLv3
  */
-
-include_once(dirname(dirname(dirname(dirname(__FILE__)))).'/helpers/MetsExporter.php');
+include_once (dirname(dirname(dirname(dirname(__FILE__)))) . '/helpers/MetsExporter.php');
 
 $collection = get_current_record('collection');
 $collectionID = $collection->id;
 
 header('Content-Type: application/zip');
-header('Content-Disposition: attachment; filename="Collection_'.$collection->id.'.zip"');
+header('Content-Disposition: attachment; filename="Collection_' . $collection->id . '.zip"');
 
 $metsExporter = new MetsExporter();
 
 $flashMessenger = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
-if(!isset($collectionID)) {
+if (! isset($collectionID)) {
     $flashMessenger->addMessage('ERROR: collection ID not set', 'error');
-}
-else {
-    try{
+} else {
+    try {
         echo $metsExporter->exportCollectionZip($collectionID);
     } catch (Exception $e) {
         $flashMessenger->addMessage($e->getMessage(), 'error');
