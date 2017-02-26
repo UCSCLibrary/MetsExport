@@ -9,9 +9,9 @@
 
 /**
  * METS Export configuration form class
- * 
+ *
  * @package MetsExport
- *         
+ *
  */
 class MetsExport_Form_Config extends Omeka_Form
 {
@@ -27,7 +27,7 @@ class MetsExport_Form_Config extends Omeka_Form
         $this->_registerElements();
     }
 
-    public function render()
+    public function render(Zend_View_Interface $view = null)
     {
         $formString = parent::render();
         $formContents = preg_replace('/<\/?form(.*)>/U', '', $formString);
@@ -50,7 +50,7 @@ class MetsExport_Form_Config extends Omeka_Form
          * )
          * );
          */
-        
+
         // Include log information:
         if (plugin_is_active('HistoryLog')) {
             $includeLogsParams = array(
@@ -58,14 +58,14 @@ class MetsExport_Form_Config extends Omeka_Form
                 'description' => __('Do you want to include logs of item curation events as administrative metadata in your METS files?'),
                 'order' => 2
             );
-            
+
             if (get_option("mets_includeLogs") == 'true')
                 $includeLogsParams['checked'] = 'checked';
             $this->addElement('checkbox', 'includeLogs', $includeLogsParams);
         }
-        
+
         $metaElementOptions = $this->_getDescAdmElements();
-        
+
         // Descriptive metadata list:
         $this->addElement('select', 'descMeta', array(
             'label' => __('Descriptive metadata elements'),
@@ -83,14 +83,14 @@ class MetsExport_Form_Config extends Omeka_Form
             'id' => 'desc-meta',
             'multiOptions' => $metaElementOptions['desc']
         ));
-        
+
         $this->addElement('button', 'makeAdmButton', array(
             'label' => 'Mark as Administrative    v',
             'id' => 'make-adm-button',
             'class' => 'select-button',
             'order' => 4
         ));
-        
+
         // Administrative metadata list:
         $this->addElement('select', 'admMeta', array(
             'label' => __('Administrative metadata elements'),
@@ -108,14 +108,14 @@ class MetsExport_Form_Config extends Omeka_Form
             'id' => 'adm-meta',
             'multiOptions' => $metaElementOptions['adm']
         ));
-        
+
         $this->addElement('button', 'makeDescButton', array(
             'label' => '^   Mark as Descriptive',
             'id' => 'make-desc-button',
             'class' => 'select-button',
             'order' => 5
         ));
-        
+
         /*
          * $this->addElement('submit', 'metsSubmitButton', array(
          * 'label'=>'Save Options',
@@ -124,7 +124,7 @@ class MetsExport_Form_Config extends Omeka_Form
          * )
          * );
          */
-        
+
         $this->addElement('radio', 'updateDialog', array(
             'label' => 'Metadata type',
             'description' => 'Administrative metadata in METS files are divided into types. Please select the type that best describes the metadata element you are marking as "administrative"',
@@ -137,13 +137,13 @@ class MetsExport_Form_Config extends Omeka_Form
                 'source' => 'Source (info about an analog source document used to create this digital document)',
                 'digiprov' => 'Digital Provenance (digital library object\'s life-cycle and history)'
             )
-            
+
         ));
-        
+
         $this->getElement('updateDialog')
             ->getDecorator('FieldTag')
             ->setOption('id', 'updateDialogDiv');
-        
+
         $displayGroup = array(
             // 'derivImages',
             'descMeta',
@@ -151,10 +151,10 @@ class MetsExport_Form_Config extends Omeka_Form
             'makeDescButton',
             'makeAdmButton'
         );
-        
+
         if (plugin_is_active('HistoryLog'))
             $displayGroup[] = 'includeLogs';
-            
+
             // Display Groups:
         $this->addDisplayGroup($displayGroup, 'options');
     }
@@ -170,7 +170,7 @@ class MetsExport_Form_Config extends Omeka_Form
             set_option('mets_includeDeriv', 'true');
         else
             set_option('mets_includeDeriv', 'false');
-        
+
         if (plugin_is_active('HistoryLog')) {
             if (! empty($_REQUEST['includeLogs'])) {
                 set_option('mets_includeLogs', 'true');
@@ -178,9 +178,9 @@ class MetsExport_Form_Config extends Omeka_Form
                 set_option('mets_includeLogs', 'false');
             }
         }
-        
+
         if (isset($_REQUEST['admElements'])) {
-            
+
             $options = array();
             foreach ($_REQUEST['admElements'] as $elementName) {
                 $key = 'adm_type_' . str_replace(' ', '', $elementName);
@@ -202,40 +202,40 @@ class MetsExport_Form_Config extends Omeka_Form
         $admElements = unserialize(get_option('mets_admElements'));
         if (! is_array($admElements))
             $admElements = array();
-        
+
         try {
             $db = get_db();
             $sql = "
-        SELECT es.name AS element_set_name, e.id AS element_id, 
+        SELECT es.name AS element_set_name, e.id AS element_id,
         e.name AS element_name, it.name AS item_type_name
-        FROM {$db->ElementSet} es 
-        JOIN {$db->Element} e ON es.id = e.element_set_id 
-        LEFT JOIN {$db->ItemTypesElements} ite ON e.id = ite.element_id 
-        LEFT JOIN {$db->ItemType} it ON ite.item_type_id = it.id 
-         WHERE es.record_type IS NULL OR es.record_type = 'Item' 
+        FROM {$db->ElementSet} es
+        JOIN {$db->Element} e ON es.id = e.element_set_id
+        LEFT JOIN {$db->ItemTypesElements} ite ON e.id = ite.element_id
+        LEFT JOIN {$db->ItemType} it ON ite.item_type_id = it.id
+         WHERE es.record_type IS NULL OR es.record_type = 'Item'
         ORDER BY es.name, it.name, e.name";
             $elements = $db->fetchAll($sql);
         } catch (Exception $e) {
             throw new Exception("Error connecting to database");
         }
-        
+
         $options = array();
-        
+
         foreach ($elements as $element) {
             $optGroup = $element['item_type_name'] ? __('Item Type') . ': ' . __($element['item_type_name']) : __($element['element_set_name']);
             $value = __($element['element_name']);
-            
+
             if (array_key_exists($element['element_name'], $admElements))
                 $options['adm'][$optGroup][$element['element_id']] = $value;
             else
                 $options['desc'][$optGroup][$element['element_id']] = $value;
         }
-        
+
         if (empty($options['adm']))
             $options['adm'] = array(
                 array()
             );
-        
+
         return $options;
     }
 }
