@@ -176,12 +176,13 @@ class MetsExport_Form_Config extends Omeka_Form
 
       
 
-      $options = array();
-      foreach($_REQUEST['admElements'] as $elementName)
-	{
-	  $options[$elementName]=$_REQUEST['adm_type_'.str_replace(' ', '', $elementName)];
-	}
-      set_option('mets_admElements',serialize($options));
+        $options = array();
+        foreach($_REQUEST['admElements'] as $elementName) {
+            $key = 'adm_type_' . str_replace(' ', '', $elementName);
+            $value = isset($_REQUEST[$key]) ? $_REQUEST[$key] : null;
+            $options[$elementName] = $value;
+        }
+        set_option('mets_admElements', serialize($options));
     }
     
 
