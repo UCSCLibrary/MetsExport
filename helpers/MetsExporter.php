@@ -33,9 +33,9 @@ class MetsExporter
      * the Admin Metadata section of the mets file
      */
     private $_admElements = array();
-    
+
     // private $_includeDeriv = get_option('mets_includeDeriv');
-    
+
     /**
      * Determines whether to include item curation logs as
      * administrative metadata
@@ -79,23 +79,23 @@ class MetsExporter
     public function exportCollection($collectionID)
     {
         $collection = get_record_by_id("collection", $collectionID);
-        
+
         $items = get_records('Item', array(
             'collection' => $collectionID
         ), 999);
-        
+
         // ob_start();
-        
+
         $this->_generateMetsHeader($collectionID, "Collection");
         $this->_generateMetsBody($collectionID, "Collection");
-        
+
         foreach ($items as $item) {
             $this->_generateMetsBody($item->id, "Item");
         }
-        
+
         $this->_generateMetsStructMap($collectionID, "Collection", $items);
         $this->_generateMetsFooter($collectionID);
-        
+
         // ob_flush();
     }
 
@@ -110,17 +110,17 @@ class MetsExporter
     public function exportCollectionZip($collectionID)
     {
         include_once (dirname(dirname(__FILE__)) . '/libraries/zipstream-php-0.2.2/zipstream.php');
-        
+
         $collection = get_record_by_id("collection", $collectionID);
-        
+
         $items = get_records('Item', array(
             'collection' => $collectionID
         ), 999);
-        
+
         error_reporting(0);
-        
+
         $zip = new ZipStream('Collection_' . $collection->id . '.zip');
-        
+
         foreach ($items as $item) {
             ob_start();
             $this->_generateMETS($item->id, false);
@@ -133,19 +133,19 @@ class MetsExporter
     {
         if (! is_numeric($itemID))
             throw new Exception("ERROR: Invalid item ID");
-        
+
         $item = get_record_by_id($recordType, $itemID);
         $owner = $item->getOwner();
         $currentuser = current_user();
-        
+
         if (is_null($item) || empty($item))
             throw new Exception("ERROR: Invalid item ID");
-        
+
         $titles = $item->getElementTexts('Dublin Core', 'Title');
         $title = $titles[0];
-        
+
         $title = htmlspecialchars($title);
-        
+
         if ($recordType == "Item") {
             $typeObj = $item->getItemType();
             $type = $typeObj ? $typeObj->name : 'Item';
@@ -153,13 +153,13 @@ class MetsExporter
             $type = $recordType;
         }
         $agents = $this->_getAgents($item);
-        
+
         echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        
+
         // --------------------
         // BEGIN OUTER METS DIV
         // --------------------
-        
+
         echo '<METS:mets ';
         echo 'xmlns:METS="http://www.loc.gov/METS/" ';
         echo 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ';
@@ -172,73 +172,73 @@ class MetsExporter
         if ($type) {
             echo 'TYPE="' . $type . '" ';
         }
-        
+
         // echo 'PROFILE="OMEKA PROFILE ONCE IT IS REGISTERED" ';
-        
+
         echo ">\n";
-        
+
         // --------------------
         // METS HEADER
         // --------------------
-        
+
         $headerID = 'ID="HDR_' . strtoupper($recordType) . '_' . $itemID . '" ';
         $headerAMDID = 'ADMID="AMD_' . strtoupper($recordType) . '_' . $itemID . '" ';
-        
+
         echo "\n<METS:metsHdr ";
         echo 'CREATEDATE="' . date("Y-m-d\TH:i:s") . '" ';
         // echo 'LASTMODDATE="'..'" ';
         echo $headerID;
         echo $headerAMDID;
         echo ">\n";
-        
+
         foreach ($agents as $agent) {
             echo '<METS:agent ';
             echo 'ROLE="' . $agent[1] . '" ';
             echo 'TYPE="' . $agent[2] . '" ';
             echo ">\n";
-            
+
             echo "<METS:name>";
             echo $agent[0];
             echo "</METS:name>\n";
-            
+
             echo "<METS:note>";
             echo $agent[3];
             echo "</METS:note>\n";
-            
+
             echo "</METS:agent>\n";
         }
-        
+
         echo "</METS:metsHdr>\n";
     }
 
     private function _generateMetsBody($itemID, $recordType)
     {
         $item = get_record_by_id($recordType, $itemID);
-        
+
         if ($recordType == "Item") {
             $files = $item->getFiles();
         } else {
             $files = array();
         }
-        
+
         // --------------------
         // DESCRIPTIVE METADATA
         // --------------------
-        
+
         // ---ITEM dmdSec
-        
+
         echo "\n<METS:dmdSec ";
         echo 'ID="DMD_' . strtoupper($recordType) . '_' . $itemID . '" ';
         echo ">\n";
-        
+
         $elementArray = $item->getAllElements();
-        
+
         foreach ($elementArray as $elementSetName => $elements) {
             ob_start();
             $flag = false;
-            
+
             $eSSlug = $this->_getElementSetSlug($elementSetName);
-            
+
             echo '<METS:mdWrap ';
             echo 'ID="MDW_' . strtoupper($recordType) . '_' . $itemID . '_' . $eSSlug . '" ';
             echo 'LABEL="' . $elementSetName . '" ';
@@ -250,37 +250,37 @@ class MetsExporter
                 echo 'MDTYPE="DC" ';
             }
             echo ">\n";
-            
+
             echo "<METS:xmlData>\n";
-            
+
             if ($eSSlug !== "")
                 $eSSlug .= ":";
-            
+
             foreach ($elements as $element) {
                 $eSlug = $this->_getElementSlug($element->name, $elementSetName);
-                
+
                 if (array_key_exists($element->name, $this->_admElNames)) {
                     if (! array_key_exists($elementSetName, $this->_admElements))
                         $this->_admElements[$elementSetName] = array();
                     $this->_admElements[$elementSetName][] = $element;
                     continue;
                 }
-                
+
                 $elementTexts = $item->getElementTexts($elementSetName, $element->name);
                 if (empty($elementTexts))
                     continue;
                 $flag = true;
-                
+
                 foreach ($elementTexts as $elementText) {
                     // echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
                     echo '<' . $eSSlug . $eSlug . ">";
                     echo htmlspecialchars($elementText->text);
                     echo "</" . $eSSlug . $eSlug . ">\n";
-                    
+
                     // echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
                 }
             }
-            
+
             echo "</METS:xmlData>\n";
             echo "</METS:mdWrap>\n";
             if ($flag)
@@ -288,25 +288,25 @@ class MetsExporter
             else
                 ob_end_clean();
         }
-        
+
         echo "</METS:dmdSec>\n";
-        
+
         // ----FILE DmdSecs---//
-        
+
         $i = 0;
         foreach ($files as $file) {
             echo "\n<METS:dmdSec ";
             echo 'ID="DMD_FILE' . $file->item_id . '_' . $i . '" ';
             echo ">\n";
-            
+
             $elements = $file->getAllElements();
-            
+
             foreach ($elements as $elementSetName => $elements) {
                 ob_start();
                 $flag = false;
-                
+
                 $eSSlug = $this->_getElementSetSlug($elementSetName);
-                
+
                 echo '<METS:mdWrap ';
                 echo 'ID="MDW_FILE' . $file->item_id . '_' . $i . '" ';
                 // echo 'MIMETYPE="'..'" ';
@@ -320,25 +320,25 @@ class MetsExporter
                     echo 'MDTYPE="DC" ';
                 }
                 echo ">\n";
-                
+
                 echo "<METS:xmlData>\n";
-                
+
                 if ($eSSlug !== "")
                     $eSSlug .= ":";
-                
+
                 foreach ($elements as $element) {
                     $eSlug = $this->_getElementSlug($element->name, $elementSetName);
                     if (array_key_exists($element->name, $this->_admElNames))
                         continue;
-                    
+
                     $elementTexts = $file->getElementTexts($elementSetName, $element->name);
-                    
+
                     if (empty($elementTexts))
                         continue;
                     $flag = true;
-                    
+
                     foreach ($elementTexts as $elementText) {
-                        
+
                         // echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
                         echo '<' . $eSSlug . $eSlug . ">";
                         echo htmlspecialchars($elementText->text);
@@ -346,29 +346,29 @@ class MetsExporter
                         echo "</" . $eSSlug . $eSlug . ">\n";
                     }
                 }
-                
+
                 echo "</METS:xmlData>\n";
                 echo "</METS:mdWrap>\n";
                 if ($flag)
                     ob_end_flush();
                 else
                     ob_end_clean();
-                
+
                 $i ++;
             }
             echo "</METS:dmdSec>\n";
         }
-        
+
         // --------------------
         // ADMINISTRATIVE METADATA
         // --------------------
-        
+
         // ----Item ADMSEC-----
-        
+
         echo "\n<METS:amdSec ";
         echo 'ID="ADM_' . strtoupper($recordType) . '_' . $itemID . '" ';
         echo ">\n";
-        
+
         $rightsMD = "";
         $sourceMD = "";
         $techMD = "";
@@ -376,11 +376,15 @@ class MetsExporter
         $md_start = "";
         $md_end = "";
         $mdWrap = array();
-        
+
         foreach ($this->_admElements as $elementSetName => $elements) {
-            
+            $elementSet = get_record('ElementSet', array('name' => $elementSetName));
+            if (empty($elementSet) || !empty($elementSet->record_type) || $elementSet->record_type != 'Item') {
+                continue;
+            }
+
             $eSSlug = $this->_getElementSetSlug($elementSetName);
-            
+
             ob_start();
             echo '<METS:mdWrap ';
             echo 'ID="MDW_ITEM' . $itemID . '_' . $eSSlug . '" ';
@@ -392,24 +396,24 @@ class MetsExporter
             } else {
                 echo 'MDTYPE="DC" ';
             }
-            
+
             // echo ">\n<METS:xmlData>\n";
             echo ">\n";
-            
+
             $MDwrap['begin'] = ob_get_clean();
-            
+
             if ($eSSlug !== "")
                 $eSSlug .= ":";
-            
+
             foreach ($elements as $element) {
                 $eSlug = $this->_getElementSlug($element->name, $elementSetName);
                 $MDtype = $this->_admElNames[$element->name];
-                
+
                 $elementTexts = $item->getElementTexts($elementSetName, $element->name);
                 if (empty($elementTexts))
                     continue;
                 $flag = true;
-                
+
                 ob_start();
                 foreach ($elementTexts as $elementText) {
                     // echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
@@ -420,12 +424,12 @@ class MetsExporter
                 }
                 $MDwrap[$MDtype] = ob_get_clean();
             }
-            
+
             ob_start();
             // echo "</METS:xmlData>\n";
             echo "</METS:mdWrap>\n";
             $MDwrap['end'] = ob_get_clean();
-            
+
             if (! empty($MDwrap['rights']))
                 echo ($MDwrap['begin'] . "<METS:techMD>" . $MDwrap['rights'] . "</METS:techMD>" . $MDwrap['end']);
             if (! empty($MDwrap['source']))
@@ -435,7 +439,7 @@ class MetsExporter
             if (! empty($MDwrap['digiprov']))
                 echo ($MDwrap['begin'] . "\n<METS:digiprovMD>\n" . $MDwrap['digiprov'] . "\n</METS:digiprovMD>\n" . $MDwrap['end']);
         }
-        
+
         if ($this->_includeLogs && plugin_is_active('HistoryLog')) {
             $params = array(
                 'record_type' => 'Item',
@@ -445,30 +449,30 @@ class MetsExporter
             );
             $limit = 999;
             $logEntries = get_db()->getTable('HistoryLogEntry')->findBy($params, $limit);
-            
+
             echo '<METS:mdWrap ';
             echo 'ID="MDW_ITEM' . $itemID . '_CURATIONLOG" ';
             echo 'LABEL="Curation Log" ';
             echo 'MDTYPE="OTHER" ';
             echo 'OTHERMDTYPE="CURATIONLOG" ';
-            
+
             echo ">\n<METS:xmlData>\n";
-            
+
             foreach ($logEntries as $logEntry) {
                 echo '<logEvent>';
                 echo __("Item changed \nby user %d at %s.", $logEntry->user_id, $logEntry->added);
                 echo $logEntry->displayChanges();
                 echo '</logEvent>';
             }
-            
+
             echo "</METS:xmlData>";
             echo "</METS:mdWrap>";
         }
-        
+
         echo "</METS:amdSec>\n";
-        
+
         // ----FILE AmdSecs---//
-        
+
         $fileAdmIds = array();
         $i = 0;
         foreach ($files as $file) {
@@ -477,7 +481,7 @@ class MetsExporter
             echo "\n<METS:amdSec ";
             echo 'ID="AMD_FILE' . $file->item_id . '_' . $i . '" ';
             echo ">\n";
-            
+
             $rightsMD = "";
             $sourceMD = "";
             $techMD = "";
@@ -485,10 +489,14 @@ class MetsExporter
             $md_start = "";
             $md_end = "";
             $mdWrap = array();
-            
+
             foreach ($this->_admElements as $elementSetName => $elements) {
+                $elementSet = get_record('ElementSet', array('name' => $elementSetName));
+                if (empty($elementSet) || !empty($elementSet->record_type) || $elementSet->record_type != 'File') {
+                    continue;
+                }
                 $eSSlug = $this->_getElementSetSlug($elementSetName);
-                
+
                 ob_start();
                 echo '<METS:mdWrap ';
                 echo 'ID="MDW_FILE' . $file->item_id . '_' . $i . '" ';
@@ -503,21 +511,21 @@ class MetsExporter
                 }
                 echo ">\n<METS:xmlData>\n";
                 $MDwrap['begin'] = ob_get_clean();
-                
+
                 if ($eSSlug !== "")
                     $eSSlug .= ":";
-                
+
                 foreach ($elements as $element) {
                     $eSlug = $this->_getElementSlug($element->name, $elementSetName);
                     $MDtype = $this->_admElNames[$element->name];
-                    
+
                     $elementTexts = $file->getElementTexts($elementSetName, $element->name);
-                    
+
                     if (empty($elementTexts))
                         continue;
-                    
+
                     $flag = true;
-                    
+
                     ob_start();
                     foreach ($elementTexts as $elementText) {
                         // echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
@@ -528,12 +536,12 @@ class MetsExporter
                     }
                     $MDwrap[$MDtype] = ob_get_clean();
                 }
-                
+
                 ob_start();
                 echo "</METS:xmlData>\n";
                 echo "</METS:mdWrap>\n";
                 $MDwrap['end'] = ob_get_clean();
-                
+
                 if (! empty($MDwrap['rights']))
                     echo ($MDwrap['begin'] . "<mets:techMD>" . $MDwrap['rights'] . "</mets:techMD>" . $MDwrap['end']);
                 if (! empty($MDwrap['source']))
@@ -542,12 +550,12 @@ class MetsExporter
                     echo ($MDwrap['begin'] . "<mets:techMD>" . $MDwrap['tech'] . "</mets:techMD>" . $MDwrap['end']);
                 if (! empty($MDwrap['digiprov']))
                     echo ($MDwrap['begin'] . "\n<mets:digiprovMD>\n" . $MDwrap['digiprov'] . "\n</mets:digiprovMD>\n" . $MDwrap['end']);
-                
+
                 echo "</METS:xmlData>\n";
                 echo "</METS:mdWrap>\n";
             }
             echo "</METS:amdSec>\n";
-            
+
             if ($flag) {
                 $fileAdmIds[$file->item_id] = 'AMD_FILE' . $file->item_id . '_' . $i;
                 ob_end_flush();
@@ -555,19 +563,19 @@ class MetsExporter
                 ob_end_clean();
             }
         }
-        
+
         // --------------------
         // FILES
         // --------------------
-        
+
         if (count($files) > 0) {
-            
+
             echo "\n<METS:fileSec ";
             echo 'ID="FILES_ITEM' . $itemID . '" ';
             if (isset($fileAdmIds[$file->item_id]))
                 echo 'ADMID="' . $fileAdmIds[$file->item_id] . '" ';
             echo ">\n";
-            
+
             $i = 0;
             foreach ($files as $file) {
                 echo '<METS:file ';
@@ -577,26 +585,26 @@ class MetsExporter
                 echo 'CREATED="' . $file->added . '" ';
                 echo 'DMDID="DMD_FILE' . $file->item_id . "_" . $i . '" ';
                 echo ">\n";
-                
+
                 echo '<FLocat ';
                 echo 'LOCTYPE="URL" ';
                 echo 'xlink:href="' . $file->getWebPath() . '" ';
                 echo "></FLocat>\n";
-                
+
                 echo "</METS:file>\n";
-                
+
                 $i ++;
             }
             // **TODO** separate fileGroups for derivative images?
             // echo '</METS:fileGrp>\n';
-            
+
             echo "</METS:fileSec>\n";
         }
     }
 
     private function _generateMetsStructMap($itemID, $recordType = "Item", $items = array())
     {
-        
+
         // --------------------
         // STRUCTURAL MAP SECTION
         // --------------------
@@ -605,13 +613,13 @@ class MetsExporter
         // echo 'TYPE="'..'" ';
         // echo 'LABEL="'..'" ';
         echo ">\n";
-        
+
         echo '<METS:div ';
         echo 'TYPE="' . strtoupper($recordType) . '" ';
         echo 'DMDID="DMD_' . strtoupper($recordType) . '_' . $itemID . '" ';
         echo 'ADMID="AMD_' . strtoupper($recordType) . '_' . $itemID . '" ';
         echo ">\n";
-        
+
         foreach ($items as $item) {
             echo '<METS:div ';
             echo 'TYPE="ITEM" ';
@@ -619,7 +627,7 @@ class MetsExporter
             echo 'ADMID="AMD_ITEM_' . $item->id . '" ';
             echo ">\n";
             // files
-            
+
             echo "</METS:div>\n";
         }
         /*
@@ -632,7 +640,7 @@ class MetsExporter
          * }
          */
         echo "</METS:div>\n";
-        
+
         echo "\n</METS:structMap>\n";
     }
 
@@ -660,29 +668,29 @@ class MetsExporter
             echo "ERROR: Invalid item ID";
             die();
         }
-        
+
         $item = get_record_by_id("item", $itemID);
         $owner = $item->getOwner();
         $currentuser = current_user();
-        
+
         if (is_null($item) || empty($item)) {
             echo "ERROR: Invalid item ID";
             die();
         }
-        
+
         $titles = $item->getElementTexts('Dublin Core', 'Title');
         $title = $titles[0];
         $title = htmlspecialchars($title);
         $type = $item->getItemType();
         $files = $item->getFiles();
         $agents = $this->_getAgents($item);
-        
+
         echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        
+
         // --------------------
         // BEGIN OUTER METS DIV
         // --------------------
-        
+
         echo '<METS:mets ';
         echo 'xmlns:METS="http://www.loc.gov/METS/" ';
         echo 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ';
@@ -695,59 +703,59 @@ class MetsExporter
         if ($type) {
             echo 'TYPE="' . $type->name . '" ';
         }
-        
+
         // echo 'PROFILE="OMEKA PROFILE ONCE IT IS REGISTERED" ';
-        
+
         echo ">\n";
-        
+
         // --------------------
         // METS HEADER
         // --------------------
-        
+
         echo "\n<METS:metsHdr ";
         echo 'CREATEDATE="' . date("Y-m-d\TH:i:s") . '" ';
         // echo 'LASTMODDATE="'..'" ';
         echo 'ID="HDR_ITEM' . $itemID . '" ';
         echo 'AMDID="AMD_ITEM' . $itemID . '" ';
         echo ">\n";
-        
+
         foreach ($agents as $agent) {
             echo '<METS:agent ';
             echo 'ROLE="' . $agent[1] . '" ';
             echo 'TYPE="' . $agent[2] . '" ';
             echo ">\n";
-            
+
             echo "<METS:name>";
             echo $agent[0];
             echo "</METS:name>\n";
-            
+
             echo "<METS:note>";
             echo $agent[3];
             echo "</METS:note>\n";
-            
+
             echo "</METS:agent>\n";
         }
-        
+
         echo "</METS:metsHdr>\n";
-        
+
         // --------------------
         // DESCRIPTIVE METADATA
         // --------------------
-        
+
         // ---ITEM dmdSec
-        
+
         echo "\n<METS:dmdSec ";
         echo 'ID="DMD_ITEM' . $itemID . '" ';
         echo ">\n";
-        
+
         $elementArray = $item->getAllElements();
-        
+
         foreach ($elementArray as $elementSetName => $elements) {
             ob_start();
             $flag = false;
-            
+
             $eSSlug = $this->_getElementSetSlug($elementSetName);
-            
+
             echo '<METS:mdWrap ';
             echo 'ID="MDW_ITEM' . $itemID . '_' . $eSSlug . '" ';
             echo 'LABEL="' . $elementSetName . '" ';
@@ -759,12 +767,12 @@ class MetsExporter
                 echo 'MDTYPE="DC" ';
             }
             echo ">\n";
-            
+
             echo "<METS:xmlData>\n";
-            
+
             if ($eSSlug !== "")
                 $eSSlug .= ":";
-            
+
             foreach ($elements as $element) {
                 $eSlug = $this->_getElementSlug($element->name, $elementSetName);
                 if (array_key_exists($element->name, $this->_admElNames)) {
@@ -773,12 +781,12 @@ class MetsExporter
                     $this->_admElements[$elementSetName][] = $element;
                     continue;
                 }
-                
+
                 $elementTexts = $item->getElementTexts($elementSetName, $element->name);
                 if (empty($elementTexts))
                     continue;
                 $flag = true;
-                
+
                 foreach ($elementTexts as $elementText) {
                     // echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
                     echo '<' . $eSSlug . $eSlug . ">";
@@ -787,7 +795,7 @@ class MetsExporter
                     echo "</" . $eSSlug . $eSlug . ">\n";
                 }
             }
-            
+
             echo "</METS:xmlData>\n";
             echo "</METS:mdWrap>\n";
             if ($flag)
@@ -795,25 +803,25 @@ class MetsExporter
             else
                 ob_end_clean();
         }
-        
+
         echo "</METS:dmdSec>\n";
-        
+
         // ----FILE DmdSecs---//
-        
+
         $i = 0;
         foreach ($files as $file) {
             echo "\n<METS:dmdSec ";
             echo 'ID="DMD_FILE' . $file->item_id . '_' . $i . '" ';
             echo ">\n";
-            
+
             $elements = $file->getAllElements();
-            
+
             foreach ($elements as $elementSetName => $elements) {
                 ob_start();
                 $flag = false;
-                
+
                 $eSSlug = $this->_getElementSetSlug($elementSetName);
-                
+
                 echo '<METS:mdWrap ';
                 echo 'ID="MDW_FILE' . $file->item_id . '_' . $i . '" ';
                 // echo 'MIMETYPE="'..'" ';
@@ -827,23 +835,23 @@ class MetsExporter
                     echo 'MDTYPE="DC" ';
                 }
                 echo ">\n";
-                
+
                 echo "<METS:xmlData>\n";
-                
+
                 if ($eSSlug !== "")
                     $eSSlug .= ":";
-                
+
                 foreach ($elements as $element) {
                     $eSlug = $this->_getElementSlug($element->name, $elementSetName);
                     if (array_key_exists($element->name, $this->_admElNames))
                         continue;
-                    
+
                     $elementTexts = $file->getElementTexts($elementSetName, $element->name);
-                    
+
                     if (empty($elementTexts))
                         continue;
                     $flag = true;
-                    
+
                     foreach ($elementTexts as $elementText) {
                         // echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
                         echo '<' . $eSSlug . $eSlug . ">";
@@ -852,31 +860,31 @@ class MetsExporter
                         echo "</" . $eSSlug . $eSlug . ">\n";
                     }
                 }
-                
+
                 echo "</METS:xmlData>\n";
                 echo "</METS:mdWrap>\n";
                 if ($flag)
                     ob_end_flush();
                 else
                     ob_end_clean();
-                
+
                 $i ++;
             }
             echo "</METS:dmdSec>\n";
         }
-        
+
         // ----COLLECTION dmdsec----//
-        
+
         // --------------------
         // ADMINISTRATIVE METADATA
         // --------------------
-        
+
         // ----Item AMDSEC-----
-        
+
         echo "\n<METS:amdSec ";
         echo 'ID="AMD_ITEM' . $itemID . '" ';
         echo ">\n";
-        
+
         $rightsMD = "";
         $sourceMD = "";
         $techMD = "";
@@ -884,11 +892,15 @@ class MetsExporter
         $md_start = "";
         $md_end = "";
         $mdWrap = array();
-        
+
         foreach ($this->_admElements as $elementSetName => $elements) {
-            
+            $elementSet = get_record('ElementSet', array('name' => $elementSetName));
+            if (empty($elementSet) || !empty($elementSet->record_type) || $elementSet->record_type != 'Item') {
+                continue;
+            }
+
             $eSSlug = $this->_getElementSetSlug($elementSetName);
-            
+
             ob_start();
             echo '<METS:mdWrap ';
             echo 'ID="MDW_ITEM' . $itemID . '_' . $eSSlug . '" ';
@@ -900,24 +912,24 @@ class MetsExporter
             } else {
                 echo 'MDTYPE="DC" ';
             }
-            
+
             // echo ">\n<METS:xmlData>\n";
             echo ">\n";
-            
+
             $MDwrap['begin'] = ob_get_clean();
-            
+
             if ($eSSlug !== "")
                 $eSSlug .= ":";
-            
+
             foreach ($elements as $element) {
                 $eSlug = $this->_getElementSlug($element->name, $elementSetName);
                 $MDtype = $this->_admElNames[$element->name];
-                
+
                 $elementTexts = $item->getElementTexts($elementSetName, $element->name);
                 if (empty($elementTexts))
                     continue;
                 $flag = true;
-                
+
                 ob_start();
                 foreach ($elementTexts as $elementText) {
                     // echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
@@ -928,12 +940,12 @@ class MetsExporter
                 }
                 $MDwrap[$MDtype] = ob_get_clean();
             }
-            
+
             ob_start();
             // echo "</METS:xmlData>\n";
             echo "</METS:mdWrap>\n";
             $MDwrap['end'] = ob_get_clean();
-            
+
             if (! empty($MDwrap['rights']))
                 echo ($MDwrap['begin'] . "<METS:techMD>" . $MDwrap['rights'] . "</METS:techMD>" . $MDwrap['end']);
             if (! empty($MDwrap['source']))
@@ -943,7 +955,7 @@ class MetsExporter
             if (! empty($MDwrap['digiprov']))
                 echo ($MDwrap['begin'] . "\n<METS:digiprovMD>\n" . $MDwrap['digiprov'] . "\n</METS:digiprovMD>\n" . $MDwrap['end']);
         }
-        
+
         if ($this->_includeLogs && plugin_is_active('HistoryLog')) {
             $params = array(
                 'record_type' => 'Item',
@@ -953,30 +965,30 @@ class MetsExporter
             );
             $limit = 999;
             $logEntries = get_db()->getTable('HistoryLogEntry')->findBy($params, $limit);
-            
+
             echo '<METS:mdWrap ';
             echo 'ID="MDW_ITEM' . $itemID . '_CURATIONLOG" ';
             echo 'LABEL="Curation Log" ';
             echo 'MDTYPE="OTHER" ';
             echo 'OTHERMDTYPE="CURATIONLOG" ';
-            
+
             echo ">\n<METS:xmlData>\n";
-            
+
             foreach ($logEntries as $logEntry) {
                 echo '<logEvent>';
                 echo __("Item changed \nby user %d at %s.", $logEntry->user_id, $logEntry->added);
                 echo $logEntry->displayChanges();
                 echo '</logEvent>';
             }
-            
+
             echo "</METS:mdWrap>";
             echo "</METS:xmldata>";
         }
-        
+
         echo "</METS:amdSec>\n";
-        
+
         // ----FILE AmdSecs---//
-        
+
         $fileAdmIds = array();
         $i = 0;
         foreach ($files as $file) {
@@ -985,7 +997,7 @@ class MetsExporter
             echo "\n<METS:amdSec ";
             echo 'ID="AMD_FILE' . $file->item_id . '_' . $i . '" ';
             echo ">\n";
-            
+
             $rightsMD = "";
             $sourceMD = "";
             $techMD = "";
@@ -993,10 +1005,14 @@ class MetsExporter
             $md_start = "";
             $md_end = "";
             $mdWrap = array();
-            
+
             foreach ($this->_admElements as $elementSetName => $elements) {
+                $elementSet = get_record('ElementSet', array('name' => $elementSetName));
+                if (empty($elementSet) || !empty($elementSet->record_type) || $elementSet->record_type != 'File') {
+                    continue;
+                }
                 $eSSlug = $this->_getElementSetSlug($elementSetName);
-                
+
                 ob_start();
                 echo '<METS:mdWrap ';
                 echo 'ID="MDW_FILE' . $file->item_id . '_' . $i . '" ';
@@ -1011,38 +1027,38 @@ class MetsExporter
                 }
                 echo ">\n<METS:xmlData>\n";
                 $MDwrap['begin'] = ob_get_clean();
-                
+
                 if ($eSSlug !== "")
                     $eSSlug .= ":";
-                
-                foreach ($elements as $element) {
+
+                    foreach ($elements as $element) {
                     $MDtype = $this->_admElNames[$element->name];
                     $eSlug = $this->_getElementSlug($element->name, $elementSetName);
-                    
+
                     $elementTexts = $file->getElementTexts($elementSetName, $element->name);
-                    
+
                     if (empty($elementTexts))
                         continue;
-                    
+
                     $flag = true;
-                    
+
                     ob_start();
                     foreach ($elementTexts as $elementText) {
                         // echo '<'.$eSSlug.preg_replace('/\s+/', '',$element->name).">";
                         echo '<' . $eSSlug . $eSlug . ">";
                         echo htmlspecialchars($elementText->text);
                         echo "</" . $eSSlug . $eSlug . ">\n";
-                        
+
                         // echo "</".$eSSlug.preg_replace('/\s+/', '', $element->name).">\n";
                     }
                     $MDwrap[$MDtype] = ob_get_clean();
                 }
-                
+
                 ob_start();
                 echo "</METS:xmlData>\n";
                 echo "</METS:mdWrap>\n";
                 $MDwrap['end'] = ob_get_clean();
-                
+
                 if (! empty($MDwrap['rights']))
                     echo ($MDwrap['begin'] . "<mets:techMD>" . $MDwrap['rights'] . "</mets:techMD>" . $MDwrap['end']);
                 if (! empty($MDwrap['source']))
@@ -1051,12 +1067,12 @@ class MetsExporter
                     echo ($MDwrap['begin'] . "<mets:techMD>" . $MDwrap['tech'] . "</mets:techMD>" . $MDwrap['end']);
                 if (! empty($MDwrap['digiprov']))
                     echo ($MDwrap['begin'] . "\n<mets:digiprovMD>\n" . $MDwrap['digiprov'] . "\n</mets:digiprovMD>\n" . $MDwrap['end']);
-                
+
                 echo "</METS:xmlData>\n";
                 echo "</METS:mdWrap>\n";
             }
             echo "</METS:amdSec>\n";
-            
+
             if ($flag) {
                 $fileAdmIds[$file->item_id] = 'AMD_FILE' . $file->item_id . '_' . $i;
                 ob_end_flush();
@@ -1064,17 +1080,17 @@ class MetsExporter
                 ob_end_clean();
             }
         }
-        
+
         // --------------------
         // FILES
         // --------------------
-        
+
         echo "\n<METS:fileSec ";
         echo 'ID="FILES_ITEM' . $itemID . '" ';
         if (isset($fileAdmIds[$file->item_id]))
             echo 'AMDID="' . $fileAdmIds[$file->item_id] . '" ';
         echo ">\n";
-        
+
         $i = 0;
         foreach ($files as $file) {
             echo '<METS:file ';
@@ -1084,48 +1100,48 @@ class MetsExporter
             echo 'CREATED="' . $file->added . '" ';
             echo 'DMDID="DMD_FILE' . $file->item_id . '_' . $i . '" ';
             echo ">\n";
-            
+
             echo '<FLocat ';
             echo 'LOCTYPE="URL" ';
             echo 'xlink:href="' . $file->getWebPath() . '" ';
             echo "></FLocat>\n";
-            
+
             echo "</METS:file>\n";
-            
+
             $i ++;
         }
         // **TODO** separate fileGroups for derivative images?
         // echo '</METS:fileGrp>\n';
-        
+
         echo "</METS:fileSec>\n";
-        
+
         // --------------------
         // STRUCTURAL MAP SECTION
         // --------------------
-        
+
         echo "\n<METS:structMap ";
         // echo 'ID="STR_ITEM'.$itemID.'" ';
         // echo 'TYPE="'..'" ';
         // echo 'LABEL="'..'" ';
         echo ">\n";
-        
+
         echo '<METS:div ';
         echo 'TYPE="ITEM" ';
         echo 'DMDID="DMD_ITEM' . $itemID . '" ';
         echo 'AMDID="AMD_ITEM' . $itemID . '" ';
         echo ">\n";
-        
+
         $i = 0;
         foreach ($files as $file) {
             echo '<METS:fptr FILEID="FILE' . $file->item_id . '_' . $i ++ . '"/>' . "\n";
             // --TODO---each file should be grouped by type,
             // and then with it's deriv. images (if any)
         }
-        
+
         echo "</METS:div>\n";
-        
+
         echo "\n</METS:structMap>\n";
-        
+
         // --------------------
         // END OUTER METS DIV
         // --------------------
@@ -1161,7 +1177,7 @@ class MetsExporter
             "OTHER",
             "The software used to generate this document is called Omeka MetsExport, which operates as a plugin for Omeka. Documentation can be found at https://github.com/UCSCLibrary/MetsExport."
         );
-        
+
         return $rv;
     }
 
@@ -1203,7 +1219,7 @@ class MetsExporter
             require_once (dirname(dirname(dirname(__FILE__))) . '/NuxeoLink/helpers/APIfunctions.php');
             return NuxeoOmekaSession::GetElementSlug($elementName);
         }
-        return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $elementName));
+        return str_replace(array(' ', '-'), '_', strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $elementName)));
     }
 
     /**
