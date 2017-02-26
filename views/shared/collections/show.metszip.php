@@ -1,6 +1,6 @@
 <?php
 /**
- * METS Export collection view script 
+ * METS Export collection view script
  *
  *Outputs a zip file for collections filled with mets files for each item
  *
@@ -18,12 +18,14 @@ header('Content-Disposition: attachment; filename="Collection_'.$collection->id.
 
 $metsExporter = new MetsExporter();
 
-if(!isset($collectionID))
-  die('ERROR: collection ID not set');
-
-try{
-  echo $metsExporter->exportCollectionZip($collectionID);
-} catch (Exception $e) {
-  die($e->getMessage());
+$flashMessenger = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
+if(!isset($collectionID)) {
+    $flashMessenger->addMessage('ERROR: collection ID not set', 'error');
 }
-?>
+else {
+    try{
+        echo $metsExporter->exportCollectionZip($collectionID);
+    } catch (Exception $e) {
+        $flashMessenger->addMessage($e->getMessage(), 'error');
+    }
+}

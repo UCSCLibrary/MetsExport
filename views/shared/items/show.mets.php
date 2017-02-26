@@ -1,6 +1,6 @@
 <?php
 /**
- * METS Export item view script 
+ * METS Export item view script
  *
  * Output a single METS file for an Omeka item.
  *
@@ -16,14 +16,17 @@ $itemID = $item->id;
 
 $metsExporter = new MetsExporter();
 
-if(!isset($itemID))
-  die('ERROR: item ID not set');
+$flashMessenger = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
+if (!isset($itemID)) {
+    $flashMessenger->addMessage('ERROR: item ID not set', 'error');
+}
+else {
+    header('Content-Type: application/octet-stream');
+    header('Content-Disposition: attachment; filename="Item_'.$itemID.'.mets.xml"');
 
-header('Content-Type: application/octet-stream');
-header('Content-Disposition: attachment; filename="Item_'.$itemID.'_METS.xml"');
-
-try{
-  echo $metsExporter->exportItem($itemID);
-} catch (Exception $e) {
-  $this->flashMessenger->addMessage($e->getMessage(),'error');;
+    try{
+      echo $metsExporter->exportItem($itemID);
+    } catch (Exception $e) {
+        $flashMessenger->addMessage($e->getMessage(), 'error');
+    }
 }
