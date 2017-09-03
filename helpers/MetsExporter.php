@@ -1037,8 +1037,9 @@ class MetsExporter
 
                     $elementTexts = $file->getElementTexts($elementSetName, $element->name);
 
-                    if (empty($elementTexts))
+                    if (empty($elementTexts)) {
                         continue;
+                    }
 
                     $flag = true;
 
@@ -1087,8 +1088,9 @@ class MetsExporter
 
         echo "\n<METS:fileSec ";
         echo 'ID="FILES_ITEM' . $itemID . '" ';
-        if (isset($fileAdmIds[$file->item_id]))
-            echo 'AMDID="' . $fileAdmIds[$file->item_id] . '" ';
+        if (isset($fileAdmIds[$item->id])) {
+            echo 'AMDID="' . $fileAdmIds[$item->id] . '" ';
+        }
         echo ">\n";
 
         $i = 0;
